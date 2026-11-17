@@ -1,0 +1,166 @@
+{
+  "voices": [
+    {
+      "id": "v01_female_warm",
+      "name": "小雅",
+      "gender": "female",
+      "age_range": "26-32",
+      "style_tags": [
+        "温暖",
+        "亲切",
+        "深夜电台"
+      ],
+      "speed_feel": "normal",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v01_female_warm.wav",
+      "prompt_text": "（TODO：这里填参考音频的逐字转写，克隆质量取决于转写准确度）",
+      "persona_name": "主持人小雅",
+      "aliases": [
+        "小雅",
+        "雅雅"
+      ]
+    },
+    {
+      "id": "v02_male_deep",
+      "name": "老张",
+      "gender": "male",
+      "age_range": "32-40",
+      "style_tags": [
+        "低沉",
+        "沉稳",
+        "访谈"
+      ],
+      "speed_feel": "slow",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v02_male_deep.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "主持人老张",
+      "aliases": [
+        "老张",
+        "张哥"
+      ]
+    },
+    {
+      "id": "v03_female_lively",
+      "name": "糖糖",
+      "gender": "female",
+      "age_range": "20-26",
+      "style_tags": [
+        "活泼",
+        "年轻",
+        "漫才"
+      ],
+      "speed_feel": "fast",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v03_female_lively.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "吐槽役糖糖",
+      "aliases": [
+        "糖糖"
+      ]
+    },
+    {
+      "id": "v04_male_bright",
+      "name": "阿亮",
+      "gender": "male",
+      "age_range": "24-30",
+      "style_tags": [
+        "明亮",
+        "快节奏",
+        "热点解读"
+      ],
+      "speed_feel": "fast",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v04_male_bright.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "捧哏阿亮",
+      "aliases": [
+        "阿亮"
+      ]
+    },
+    {
+      "id": "v05_male_storyteller",
+      "name": "老白",
+      "gender": "male",
+      "age_range": "40-50",
+      "style_tags": [
+        "叙事",
+        "磁性",
+        "故事剧场"
+      ],
+      "speed_feel": "slow",
+      "license_status": "public",
+      "source": "public",
+      "prompt_audio": "voice_lib/audio/v05_male_storyteller.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "说书人老白",
+      "aliases": [
+        "老白"
+      ]
+    },
+    {
+      "id": "v06_female_professor",
+      "name": "林老师",
+      "gender": "female",
+      "age_range": "35-45",
+      "style_tags": [
+        "知性",
+        "清晰",
+        "实战课堂"
+      ],
+      "speed_feel": "normal",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v06_female_professor.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "林老师",
+      "aliases": [
+        "林老师"
+      ]
+    },
+    {
+      "id": "v07_male_debate",
+      "name": "老周",
+      "gender": "male",
+      "age_range": "30-38",
+      "style_tags": [
+        "锐利",
+        "辩论",
+        "语速快"
+      ],
+      "speed_feel": "fast",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v07_male_debate.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "辩手老周",
+      "aliases": [
+        "老周"
+      ]
+    },
+    {
+      "id": "v08_female_soft",
+      "name": "眠眠",
+      "gender": "female",
+      "age_range": "22-28",
+      "style_tags": [
+        "轻柔",
+        "ASMR感",
+        "助眠"
+      ],
+      "speed_feel": "slow",
+      "license_status": "authorized",
+      "source": "self_recorded",
+      "prompt_audio": "voice_lib/audio/v08_female_soft.wav",
+      "prompt_text": "（TODO）",
+      "persona_name": "助眠眠眠",
+      "aliases": [
+        "眠眠"
+      ]
+    }
+  ]
+}

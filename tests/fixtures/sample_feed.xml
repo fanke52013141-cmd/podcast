@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>测试播客源 · 科技周报</title>
+    <link>https://example.com</link>
+    <description>P1-14 RSS 批量测试夹具</description>
+    <item>
+      <title>AI 编程助手的下一站</title>
+      <link>https://example.com/a1</link>
+      <description>从补全到重构，AI 编程工具的边界在哪里？本期聊聊真实使用体验。</description>
+      <pubDate>Mon, 17 Nov 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>本地大模型的消费级落地</title>
+      <link>https://example.com/a2</link>
+      <description>5090 与 5080 上的推理实测，以及量化带来的质量损失。</description>
+      <pubDate>Sun, 16 Nov 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>播客行业的 AI 变量</title>
+      <link>https://example.com/a3</link>
+      <description>当生成式 AI 进入音频制作，主播、剪辑师和平台各自发生了什么变化。</description>
+      <pubDate>Sat, 15 Nov 2026 08:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

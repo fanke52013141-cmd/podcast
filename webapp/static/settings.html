@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>设置 · AI 播客工坊</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="logo"><span class="wave">▮▮▮</span> AI 播客工坊</div>
+  <nav>
+    <a href="/">工作台</a>
+    <a href="#" data-soon>音色库</a>
+    <a href="/tasks">任务中心</a>
+    <a class="active" href="/settings">设置</a>
+  </nav>
+  <div class="user">Studio</div>
+</header>
+
+<main class="setwrap">
+  <aside class="setnav card">
+    <a href="#secLlm" class="on">写稿引擎</a>
+    <a href="#secTts">语音合成</a>
+    <a href="#secDefaults">任务默认值</a>
+    <a href="#secData">数据与目录</a>
+    <a href="#secQueue">夜间队列</a>
+    <div class="navfoot small">配置保存在本地 .env<br>不会上传任何服务器</div>
+  </aside>
+
+  <div class="setmain">
+    <!-- ① 写稿引擎 -->
+    <section class="card setcard" id="secLlm">
+      <h2>写稿引擎</h2>
+      <p class="sub">配置播客脚本改写大语言模型（DeepSeek 主 / GLM 备）</p>
+      <div class="frow">
+        <div><div class="field-label">提供商</div>
+          <select id="sProvider"><option>DeepSeek（主）</option><option>GLM（备用）</option></select></div>
+        <div class="grow"><div class="field-label">API Key</div>
+          <div class="keyrow">
+            <input type="password" id="sKey" placeholder="sk-..." autocomplete="off">
+            <button class="ghost" id="btnShowKey">显示</button>
+            <button class="ghost amber" id="btnTestLlm">测试连接</button>
+          </div>
+          <div class="keymeta"><span id="keyState" class="small"></span>
+            <span id="llmTest" class="badge"></span></div>
+        </div>
+      </div>
+      <div class="frow">
+        <div><div class="field-label">模型名</div><input id="sModel" class="mono" placeholder="deepseek-chat"></div>
+        <div class="grow"><div class="field-label">创意温度 <b id="tempVal" class="mono">0.9</b></div>
+          <input type="range" id="sTemp" min="2" max="12" value="9"></div>
+      </div>
+      <div class="micro">🔒 Key 保存在本地 .env，严格本地优先，不会上传第三方云端</div>
+    </section>
+
+    <!-- ② 语音合成 -->
+    <section class="card setcard" id="secTts">
+      <h2>语音合成</h2>
+      <p class="sub">SoulX-Podcast 本地推理服务（部署在 5080 机器）</p>
+      <div class="frow">
+        <div class="grow"><div class="field-label">TTS 服务地址</div>
+          <div class="keyrow">
+            <input id="sTtsUrl" class="mono" placeholder="http://192.168.1.10:8600">
+            <button class="ghost amber" id="btnTestTts">探活</button>
+          </div>
+          <div class="keymeta"><span id="ttsTest" class="badge"></span></div>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="grow"><div class="field-label">SoulX 模型路径（5080 机器上）</div>
+          <input id="sModelPath" class="mono" placeholder="pretrained_models/SoulX-Podcast-1.7B"></div>
+        <div><div class="field-label">分段时长 <b id="segVal" class="mono">7 分钟/段</b></div>
+          <input type="range" id="sSeg" min="5" max="8" value="7"></div>
+      </div>
+      <div class="field-label" style="margin-top:14px">副语言标签（写稿白名单，下次生成生效）</div>
+      <div class="tagchips" id="paraling"></div>
+      <div class="frow" style="margin-top:14px">
+        <div><div class="field-label">VoiceStar 服务地址（定长片段，可选）</div>
+          <input id="sVsUrl" class="mono" placeholder="http://127.0.0.1:8700"></div>
+        <div class="grow"><div class="field-label">VoiceStar 命令模板（与地址二选一）</div>
+          <input id="sVsCmd" class="mono" placeholder="python /path/VoiceStar/inference.py --text &quot;{text}&quot; --target_duration {duration} --ref_audio &quot;{ref}&quot; --output &quot;{out}&quot;"></div>
+      </div>
+      <div class="micro">VoiceStar（840M）用于片头/广告位等「精确时长」片段；权重需另行下载，未配置不影响主链路</div>
+    </section>
+
+    <!-- ③ 任务默认值 -->
+    <section class="card setcard" id="secDefaults">
+      <h2>任务默认值</h2>
+      <p class="sub">新建创作工程时的预设模板</p>
+      <div class="frow">
+        <div><div class="field-label">默认风格</div>
+          <select id="sStyle"></select></div>
+        <div class="grow"><div class="field-label">默认时长 <b id="dminVal" class="mono">10 分钟</b></div>
+          <input type="range" id="sMinutes" min="3" max="30" value="10"></div>
+      </div>
+      <div class="frow">
+        <div><div class="field-label">默认主持人</div><select id="sHost"></select></div>
+        <div><div class="field-label">默认搭档</div><select id="sPartner"></select></div>
+      </div>
+    </section>
+
+    <!-- ④ 数据与目录 -->
+    <section class="card setcard" id="secData">
+      <h2>数据与目录</h2>
+      <p class="sub">本地任务产物与系统诊断</p>
+      <div class="frow">
+        <div class="grow"><div class="field-label">jobs 目录</div>
+          <input class="mono" id="sJobsDir" readonly></div>
+        <div class="grow"><div class="field-label">.env 路径</div>
+          <input class="mono" id="sEnvPath" readonly></div>
+      </div>
+      <div class="frow">
+        <button class="ghost" id="btnDiag">一键生成诊断包</button>
+        <span class="small">自动打包任务日志与报错栈（脱敏）——P2-11 接入</span>
+      </div>
+    </section>
+
+    <!-- ⑤ 夜间批量队列（P3-5） -->
+    <section class="card setcard" id="secQueue">
+      <h2>夜间批量队列</h2>
+      <p class="sub">每天到点按主题列表批量创建任务（服务进程常驻时生效）</p>
+      <div class="frow">
+        <div><div class="field-label">执行时间</div><input id="qTime" type="time" value="02:00"></div>
+        <div><div class="field-label">节目模板</div><select id="qTpl"></select></div>
+        <div><div class="field-label">每集时长 <b id="qMinVal" class="mono">10 分钟</b></div>
+          <input type="range" id="qMin" min="3" max="30" value="10"></div>
+      </div>
+      <div class="field-label">主题列表（每行一个）</div>
+      <textarea id="qTopics" rows="3" placeholder="AI 编程助手的下一站&#10;本地大模型的消费级落地&#10;播客行业的 AI 变量"></textarea>
+      <div class="frow" style="margin-top:10px">
+        <button class="ghost amber" id="btnAddSchedule">添加到夜间队列</button>
+        <span class="small">到点自动按主题各生成一集；支持下方“立即执行”手动触发</span>
+      </div>
+      <div id="qList" class="qlist" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+    </section>
+
+    <div class="actionbar">
+      <span class="small">更改保存后即时生效 · 无需重启</span>
+      <div>
+        <button class="ghost" id="btnReset">重置为默认</button>
+        <button class="primary" id="btnSave">保存设置</button>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script src="/static/settings.js"></script>
+</body>
+</html>

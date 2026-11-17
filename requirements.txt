@@ -1,0 +1,20 @@
+# 编排层（本机/服务器）
+langchain>=0.3
+langchain-openai>=0.2
+langgraph>=0.2
+python-dotenv>=1.0
+requests>=2.31
+
+# TTS 服务（5080 机器，随 SoulX requirements 一起装亦可）
+fastapi>=0.115
+uvicorn>=0.30
+pydantic>=2.8
+
+# 后期（P2 已用）
+pillow>=10.0
+faster-whisper>=1.0
+av>=14.0                # faster-whisper 解码用；与 fw 1.2.1 兼容需 >=14
+
+# 后期（P2 可选）
+# audioseal>=0.1
+# funasr>=1.1

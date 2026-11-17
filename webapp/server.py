@@ -1,0 +1,666 @@
+"""Web 服务 —— 工作台 UI + REST API（FastAPI + 静态页零构建，indextts2-studio 模式）。
+
+启动:  py -m uvicorn webapp.server:app --port 8765
+打开:  http://127.0.0.1:8765
+"""
+from __future__ import annotations
+import asyncio, json, os, re
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+from orchestrator.extract import extract
+from webapp import jobs as jobmgr
+from webapp import settings_store
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+app = FastAPI(title="AI 播客工坊", version="0.1.0")
+
+
+@app.on_event("startup")
+def _startup():
+    jobmgr.start_scheduler()          # P3-5 夜间队列轮询（DISABLE_SCHEDULER=1 可关）
+
+
+@app.get("/")
+def index():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "index.html")
+
+
+@app.get("/settings")
+def settings_page():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "settings.html")
+
+
+@app.get("/voices")
+def voices_page():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "voices.html")
+
+
+@app.get("/tasks")
+def tasks_page():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "tasks.html")
+
+
+@app.get("/traces")
+def traces_page():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "traces.html")
+
+
+@app.get("/job/{job_id}")
+def job_page(job_id: str):
+    if jobmgr.get_job(job_id) is None:
+        raise HTTPException(404, "任务不存在")
+    return FileResponse(BASE_DIR / "webapp" / "static" / "job.html")
+
+
+app.mount("/static", StaticFiles(directory=BASE_DIR / "webapp" / "static"), name="static")
+
+
+# ---------- API ----------
+
+class CreateReq(BaseModel):
+    topic: str
+    style: str = "幽默对谈"
+    minutes: int = 10
+    material: str = ""            # URL / 文件路径 / 原始素材文本
+    provider: str = "mock"        # mock | api（api 需配置 DEEPSEEK_API_KEY）
+    tts_url: str = ""             # 留空则只产出脚本
+    bgm: str = ""                 # 模板指定 BGM 文件名（空=按风格自动）
+
+
+@app.post("/api/jobs")
+def create_job(req: CreateReq):
+    if not req.topic.strip():
+        raise HTTPException(400, "主题不能为空")
+    material = req.material.strip()
+    try:
+        if material:
+            material, source_type = extract(material)
+        elif re.match(r"^https?://", req.topic.strip()):
+            material, source_type = extract(req.topic.strip())   # 主题即链接 → 抓正文
+            print(f"[extract] {req.topic.strip()} -> {source_type}, {len(material)} chars")
+    except Exception as e:
+        raise HTTPException(400, f"素材抽取失败: {e}")
+    voice_map = {"S1": os.getenv("DEFAULT_HOST_VOICE", "v01_female_warm"),
+                 "S2": os.getenv("DEFAULT_PARTNER_VOICE", "v02_male_deep")}
+    tts_url = req.tts_url or os.getenv("TTS_URL", "")
+    return jobmgr.create_job(req.topic.strip(), req.style, req.minutes,
+                             material=material, provider=req.provider,
+                             voice_map=voice_map, tts_url=tts_url, bgm=req.bgm)
+
+
+@app.post("/api/upload")
+async def upload_material(file: UploadFile = File(...)):
+    """工作台素材上传：保存到 uploads/ 并返回服务器路径（供 material 使用）。"""
+    import re
+    import time as _t
+    if not file.filename.lower().endswith((".pdf", ".docx", ".txt", ".md")):
+        raise HTTPException(400, "支持 PDF / DOCX / TXT / MD")
+    content = await file.read()
+    if len(content) > 30 * 1024 * 1024:
+        raise HTTPException(400, "文件超过 30MB")
+    updir = BASE_DIR / "uploads"
+    updir.mkdir(exist_ok=True)
+    safe = re.sub(r"[^\w.\-\u4e00-\u9fff]+", "_", file.filename)
+    p = updir / f"{_t.strftime('%Y%m%d-%H%M%S')}-{safe}"
+    p.write_bytes(content)
+    return {"path": str(p), "name": file.filename, "size": len(content)}
+
+
+# ---------- 节目模板（P3-7） ----------
+
+@app.get("/api/templates")
+def get_templates():
+    from webapp import templates_store
+    return templates_store.list_templates()
+
+
+class TemplateReq(BaseModel):
+    name: str
+    style: str = "幽默对谈"
+    host_voice: str = ""
+    partner_voice: str = ""
+    bgm: str = ""
+    minutes: int = 10
+
+
+@app.post("/api/templates")
+def create_template(req: TemplateReq):
+    from webapp import templates_store
+    try:
+        return templates_store.create_template(req.model_dump())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/templates/{tid}")
+def delete_template(tid: str):
+    from webapp import templates_store
+    templates_store.delete_template(tid)
+    return {"ok": True}
+
+
+# ---------- 夜间批量队列（P3-5） ----------
+
+@app.get("/api/schedules")
+def get_schedules():
+    from webapp import schedules_store
+    return schedules_store.list_schedules()
+
+
+class ScheduleReq(BaseModel):
+    time: str
+    topics: list[str] = []
+    style: str = "幽默对谈"
+    host_voice: str = "v01_female_warm"
+    partner_voice: str = "v02_male_deep"
+    minutes: int = 10
+    bgm: str = ""
+    enabled: bool = True
+
+
+@app.post("/api/schedules")
+def create_schedule(req: ScheduleReq):
+    from webapp import schedules_store
+    try:
+        return schedules_store.create_schedule(req.model_dump())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/schedules/{sid}")
+def delete_schedule(sid: str):
+    from webapp import schedules_store
+    schedules_store.delete_schedule(sid)
+    return {"ok": True}
+
+
+@app.post("/api/schedules/{sid}/run-now")
+def run_schedule_now(sid: str):
+    from webapp import schedules_store
+    for s in schedules_store.list_schedules():
+        if s["id"] == sid:
+            created = jobmgr.create_jobs_from_schedule(s)
+            return {"ok": True, "created": created, "count": len(created)}
+    raise HTTPException(404, "schedule 不存在")
+
+
+@app.get("/api/jobs")
+def list_jobs():
+    return jobmgr.list_jobs()
+
+
+@app.get("/api/jobs/{job_id}")
+def get_job(job_id: str):
+    j = jobmgr.get_job(job_id)
+    if j is None:
+        raise HTTPException(404, "任务不存在")
+    return j
+
+
+@app.get("/api/jobs/{job_id}/stream")
+async def stream(job_id: str):
+    """SSE：任务状态变化时推送（1s 轮询 job.json，够用且零依赖）。"""
+    async def gen():
+        last = None
+        for _ in range(1800):                     # 最长 30 分钟
+            j = jobmgr.get_job(job_id)
+            cur = json.dumps({"status": j.get("status"), "step": j.get("step"),
+                              "error": j.get("error")}, ensure_ascii=False) if j else "{}"
+            if cur != last:
+                last = cur
+                yield f"data: {cur}\n\n"
+            if j and j.get("status") in ("done", "failed", "script_ready"):
+                break
+            await asyncio.sleep(1)
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@app.get("/api/jobs/{job_id}/audio")
+def job_audio(job_id: str):
+    j = jobmgr.get_job(job_id) or {}
+    wav = (j.get("paths") or {}).get("wav")
+    if not wav or not os.path.exists(wav):
+        raise HTTPException(404, "音频尚未合成（等待 5080 TTS 服务）")
+    return FileResponse(wav, media_type="audio/wav", filename=f"{job_id}.wav")
+
+
+@app.get("/api/jobs/{job_id}/srt")
+def job_srt(job_id: str):
+    p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("srt")
+    if not p or not os.path.exists(p):
+        raise HTTPException(404, "字幕尚未生成")
+    return FileResponse(p, media_type="text/plain; charset=utf-8",
+                        filename=f"{job_id}.srt")
+
+
+@app.get("/api/jobs/{job_id}/vtt")
+def job_vtt(job_id: str):
+    p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("vtt")
+    if not p or not os.path.exists(p):
+        raise HTTPException(404, "VTT 字幕尚未生成")
+    return FileResponse(p, media_type="text/vtt; charset=utf-8",
+                        filename=f"{job_id}.vtt")
+
+
+@app.post("/api/jobs/{job_id}/qc")
+def run_qc(job_id: str):
+    try:
+        return jobmgr.qc_job(job_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/jobs/{job_id}/postprocess")
+def run_postprocess(job_id: str):
+    try:
+        return jobmgr.postprocess_job(job_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/jobs/{job_id}/export")
+def job_export(job_id: str):
+    j = jobmgr.get_job(job_id) or {}
+    paths = j.get("paths") or {}
+    for key, mime, ext in (("final_sfx", "audio/mpeg", "mp3"),
+                           ("final_mp3", "audio/mpeg", "mp3"),
+                           ("wav", "audio/wav", "wav")):
+        p = paths.get(key)
+        if p and os.path.exists(p):
+            return FileResponse(p, media_type=mime, filename=f"{job_id}.{ext}")
+    raise HTTPException(404, "成品尚未生成")
+
+
+@app.get("/api/jobs/{job_id}/cover")
+def job_cover(job_id: str):
+    p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("cover")
+    if not p or not os.path.exists(p):
+        raise HTTPException(404)
+    return FileResponse(p, media_type="image/png")
+
+
+@app.delete("/api/jobs/{job_id}")
+def delete_job(job_id: str):
+    import shutil
+    d = Path(jobmgr.JOBS_DIR) / job_id
+    if not d.exists():
+        raise HTTPException(404, "任务不存在")
+    shutil.rmtree(d)
+    return {"ok": True, "deleted": job_id}
+
+
+class DiagReq(BaseModel):
+    job_id: str = ""
+
+
+# ---------- RSS 批量（P1-14） ----------
+
+class RssReq(BaseModel):
+    url: str
+    limit: int = 5
+
+
+@app.post("/api/rss/preview")
+def rss_preview(req: RssReq):
+    from orchestrator.extract import rss_items
+    try:
+        return rss_items(req.url, limit=req.limit)
+    except Exception as e:
+        raise HTTPException(400, f"RSS 解析失败: {e}")
+
+
+class BatchReq(BaseModel):
+    url: str
+    limit: int = 5
+    style: str = "幽默对谈"
+    minutes: int = 10
+    provider: str = "mock"
+    bgm: str = ""
+    host_voice: str = "v01_female_warm"
+    partner_voice: str = "v02_male_deep"
+
+
+@app.post("/api/jobs/batch")
+def create_batch(req: BatchReq):
+    """RSS 每一条创建一个播客任务，使用界面当前风格/时长/音色（单 worker 排队）。"""
+    from orchestrator.extract import rss_items
+    try:
+        feed = rss_items(req.url, limit=req.limit)
+    except Exception as e:
+        raise HTTPException(400, f"RSS 解析失败: {e}")
+    created = []
+    for it in feed["items"]:
+        material = f"{it['title']}\n{it['summary']}"
+        r = jobmgr.create_job(it["title"], req.style, req.minutes,
+                              material=material, provider=req.provider,
+                              voice_map={"S1": req.host_voice, "S2": req.partner_voice},
+                              tts_url=os.getenv("TTS_URL", ""), bgm=req.bgm)
+        created.append(r["job_id"])
+    return {"feed_title": feed.get("feed_title", ""), "created": created,
+            "count": len(created)}
+
+
+# ---------- 本地观测（P2-5） ----------
+
+@app.get("/api/traces")
+def get_traces(job_id: str = "", limit: int = 200):
+    return jobmgr.read_traces(job_id=job_id, limit=limit)
+
+
+# ---------- 剪辑（UI-6） ----------
+
+class EditReq(BaseModel):
+    trim_start: float | None = None
+    trim_end: float | None = None
+    speed: float = 1.0
+    turn_gains: dict = {}
+
+
+@app.post("/api/jobs/{job_id}/edit")
+def edit_job(job_id: str, req: EditReq):
+    try:
+        return jobmgr.edit_job(job_id, req.trim_start, req.trim_end,
+                               req.speed, req.turn_gains)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/jobs/{job_id}/edited")
+def edited_audio(job_id: str):
+    p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("edited_mp3")
+    if not p or not os.path.exists(p):
+        raise HTTPException(404, "剪辑版尚未生成")
+    return FileResponse(p, media_type="audio/mpeg", filename=f"{job_id}-edited.mp3")
+
+
+# ---------- 音效/转场对位（P2-6） ----------
+
+class SfxReq(BaseModel):
+    turn: int
+    ratio: float = 0.0
+    name: str = "whoosh"
+    gain_db: float = -6
+
+
+@app.get("/api/jobs/{job_id}/sfx")
+def get_sfx(job_id: str):
+    return jobmgr.list_sfx(job_id)
+
+
+@app.post("/api/jobs/{job_id}/sfx")
+def add_sfx(job_id: str, req: SfxReq):
+    try:
+        return jobmgr.add_sfx(job_id, req.turn, req.ratio, req.name, req.gain_db)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/api/jobs/{job_id}/sfx/{idx}")
+def del_sfx(job_id: str, idx: int):
+    try:
+        return jobmgr.remove_sfx(job_id, idx)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/jobs/{job_id}/apply-sfx")
+def apply_sfx(job_id: str):
+    try:
+        return jobmgr.apply_sfx_job(job_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/jobs/{job_id}/sfx-audio")
+def sfx_audio(job_id: str):
+    p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("final_sfx")
+    if not p or not os.path.exists(p):
+        raise HTTPException(404, "带音效的成品尚未生成")
+    return FileResponse(p, media_type="audio/mpeg", filename=f"{job_id}-sfx.mp3")
+
+
+# ---------- VoiceStar 定长片段（P2-7 接口） ----------
+
+class FixedReq(BaseModel):
+    text: str
+    target_duration: float
+    voice_id: str = ""
+
+
+@app.post("/api/fixed-segment")
+def fixed_segment(req: FixedReq):
+    from tts_service.fixed_segment import synthesize_fixed
+    try:
+        return synthesize_fixed(req.text, req.target_duration)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    except RuntimeError as e:
+        raise HTTPException(503, str(e))
+    except Exception as e:
+        raise HTTPException(500, f"{type(e).__name__}: {e}")
+
+
+@app.post("/api/diag")
+def make_diag(req: DiagReq):
+    """一键诊断包（P2-11）：任务产物 + 脱敏配置 → zip。"""
+    import json as _json
+    import time as _t
+    import zipfile
+    ts = _t.strftime("%Y%m%d-%H%M%S")
+    zpath = Path(jobmgr.JOBS_DIR) / f"diag-{ts}.zip"
+    snap = settings_store.snapshot()
+    snap["llm"]["api_key_masked"] = "***"
+    with zipfile.ZipFile(zpath, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("system.json", _json.dumps({
+            "platform": os.sys.platform, "python": os.sys.version,
+            "settings": snap}, ensure_ascii=False, indent=2, default=str))
+        targets = [req.job_id] if req.job_id else \
+            [d.name for d in sorted(Path(jobmgr.JOBS_DIR).iterdir(), reverse=True)
+             if d.is_dir() and not d.name.startswith("diag")][:5]
+        for jid in targets:
+            d = Path(jobmgr.JOBS_DIR) / jid
+            if not d.exists():
+                continue
+            for f in d.iterdir():
+                if f.suffix in (".json", ".srt", ".log", ".txt"):
+                    z.write(f, f"{jid}/{f.name}")
+    return {"ok": True, "zip": str(zpath), "size_kb": round(zpath.stat().st_size / 1024, 1)}
+
+
+@app.get("/api/voices")
+def voices():
+    from webapp import voice_store
+    return [{"id": v["id"], "name": v["name"], "gender": v["gender"],
+             "age_range": v["age_range"], "style_tags": v["style_tags"],
+             "persona_name": v.get("persona_name", ""),
+             "license_status": v.get("license_status", ""),
+             "source": v.get("source", ""),
+             "speed_feel": v.get("speed_feel", "normal"),
+             "language": v.get("language", "zh"),
+             "prompt_audio": v.get("prompt_audio", ""),
+             "prompt_text": v.get("prompt_text", "")}
+            for v in voice_store.list_voices()]
+
+
+class VoiceReq(BaseModel):
+    name: str = ""
+    gender: str = "female"
+    age_range: str = "26-32"
+    style_tags: list[str] = []
+    speed_feel: str = "normal"
+    license_status: str = "authorized"
+    source: str = "self_recorded"
+    prompt_text: str = ""
+    persona_name: str = ""
+    aliases: list[str] = []
+
+
+@app.post("/api/voices")
+def create_voice(req: VoiceReq):
+    from webapp import voice_store
+    try:
+        return voice_store.create(req.model_dump())
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.put("/api/voices/{vid}")
+def update_voice(vid: str, req: VoiceReq):
+    from webapp import voice_store
+    try:
+        return voice_store.update(vid, req.model_dump())
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.delete("/api/voices/{vid}")
+def delete_voice(vid: str):
+    from webapp import voice_store
+    defaults = settings_store.snapshot()["defaults"]
+    if vid in (defaults["host_voice"], defaults["partner_voice"]):
+        raise HTTPException(409, "该音色正作为默认主持人/搭档，请先更换默认音色再删除")
+    try:
+        voice_store.delete(vid, remove_audio=True)
+        return {"ok": True, "deleted": vid}
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.post("/api/voices/{vid}/audio")
+async def upload_voice_audio(vid: str, file: UploadFile = File(...)):
+    from webapp import voice_store
+    if not file.filename.lower().endswith((".wav", ".mp3", ".m4a")):
+        raise HTTPException(400, "仅支持 wav/mp3/m4a 参考音频")
+    content = await file.read()
+    if len(content) > 20 * 1024 * 1024:
+        raise HTTPException(400, "文件超过 20MB")
+    suffix = "." + file.filename.rsplit(".", 1)[-1].lower()
+    try:
+        rel = voice_store.save_audio(vid, content, suffix)
+        return {"ok": True, "path": rel}
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.get("/api/voices/{vid}/audio")
+def voice_audio(vid: str):
+    from webapp import voice_store
+    if not voice_store.get(vid):
+        raise HTTPException(404, "音色不存在")
+    audio = voice_store.audio_path(vid)
+    if not audio:
+        raise HTTPException(404, "参考音频尚未录制（P1-8）")
+    return FileResponse(audio, media_type="audio/wav", filename=f"{vid}.wav")
+
+
+class SetRoleReq(BaseModel):
+    role: str                                        # host | partner
+
+
+@app.post("/api/voices/{vid}/set-role")
+def set_voice_role(vid: str, req: SetRoleReq):
+    from webapp import voice_store
+    if not voice_store.get(vid):
+        raise HTTPException(404, "音色不存在")
+    if req.role not in ("host", "partner"):
+        raise HTTPException(400, "role 只能是 host 或 partner")
+    from webapp.settings_store import write_env
+    key = "DEFAULT_HOST_VOICE" if req.role == "host" else "DEFAULT_PARTNER_VOICE"
+    write_env({key: vid})
+    return {"ok": True, "role": req.role, "voice_id": vid}
+
+
+class ExtractReq(BaseModel):
+    source: str
+
+
+@app.post("/api/extract")
+def do_extract(req: ExtractReq):
+    try:
+        text, source_type = extract(req.source)
+        return {"source_type": source_type, "chars": len(text),
+                "preview": text[:400]}
+    except Exception as e:
+        raise HTTPException(400, f"{e}")
+
+
+# ---------- 设置（UI-7）----------
+
+@app.get("/api/settings")
+def get_settings():
+    return settings_store.snapshot()
+
+
+@app.post("/api/settings")
+def save_settings(payload: dict):
+    """扁平键值更新；含 • 的掩码值视为未修改跳过。"""
+    updates = {}
+    for k, v in (payload or {}).items():
+        if k not in settings_store.SETTINGS_KEYS:
+            continue
+        v = str(v).strip()
+        if "•" in v:                       # 掩码占位 → 不覆盖
+            continue
+        updates[k] = v
+    if not updates:
+        return {"saved": 0}
+    settings_store.write_env(updates)
+    return {"saved": len(updates), "keys": list(updates)}
+
+
+class TestLLMReq(BaseModel):
+    api_key: str = ""                      # 可选：测试未保存的新 key
+    base_url: str = ""
+    model: str = ""
+
+
+@app.post("/api/settings/test-llm")
+def test_llm(req: TestLLMReq):
+    import time as _t
+    import requests
+    key = req.api_key or os.getenv("DEEPSEEK_API_KEY", "")
+    base = (req.base_url or os.getenv("DEEPSEEK_BASE_URL",
+            "https://api.deepseek.com")).rstrip("/")
+    model = req.model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
+    if not key:
+        return {"ok": False, "error": "未配置 API Key"}
+    try:
+        t0 = _t.time()
+        r = requests.post(f"{base}/chat/completions",
+                          headers={"Authorization": f"Bearer {key}"},
+                          json={"model": model,
+                                "messages": [{"role": "user", "content": "ping"}],
+                                "max_tokens": 1},
+                          timeout=10)
+        ms = int((_t.time() - t0) * 1000)
+        if r.status_code == 200:
+            return {"ok": True, "latency_ms": ms, "model": model}
+        return {"ok": False, "error": f"HTTP {r.status_code}: {r.text[:120]}"}
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}"}
+
+
+class TestTTSReq(BaseModel):
+    url: str = ""
+
+
+@app.post("/api/settings/test-tts")
+def test_tts(req: TestTTSReq):
+    import requests
+    url = (req.url or os.getenv("TTS_URL", "")).rstrip("/")
+    if not url:
+        return {"ok": False, "error": "未配置 TTS 服务地址"}
+    try:
+        r = requests.get(f"{url}/health", timeout=5)
+        r.raise_for_status()
+        d = r.json()
+        vram = d.get("vram_free_gb")
+        extra = f" · 显存空闲 {vram:.1f}GB" if isinstance(vram, (int, float)) else ""
+        return {"ok": True, "detail": f"在线 · {d.get('model', 'soulx')}{extra}"}
+    except Exception as e:
+        return {"ok": False, "error": f"探活失败: {e}"}

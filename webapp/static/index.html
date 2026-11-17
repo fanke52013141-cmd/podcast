@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 播客工坊</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="logo"><span class="wave">▮▮▮</span> AI 播客工坊</div>
+  <nav>
+    <a class="active" href="/">工作台</a>
+    <a href="/voices">音色库</a>
+    <a href="/">任务中心</a>
+    <a href="/settings">设置</a>
+  </nav>
+  <div class="user">Studio</div>
+</header>
+
+<main class="grid">
+  <!-- 左：创作卡 -->
+  <section class="card create">
+    <h2>开始创作</h2>
+    <p class="sub">智能脚本引擎 · 支持文章一键转双人对谈播客</p>
+    <div class="tplrow">
+      <label class="small">节目模板
+        <select id="tplSel"><option value="">无（手动配置）</option></select></label>
+      <button class="ghost" id="btnSaveTpl">存为模板</button>
+      <button class="ghost" id="btnDelTpl" hidden style="color:var(--red)">删除模板</button>
+    </div>
+    <textarea id="topic" rows="3" placeholder="输入主题，或粘贴文章链接（https://...）"></textarea>
+    <div class="drop" id="drop">
+      <input type="file" id="file" accept=".pdf,.txt,.md,.docx" hidden>
+      <span id="dropText">拖入 PDF / 文档作为素材，或 <label class="link">浏览本地文件</label></span>
+    </div>
+
+    <div class="field-label">对话风格</div>
+    <div class="styles" id="styles"></div>
+
+    <div class="row">
+      <div class="grow">
+        <div class="field-label">时长 <b id="minutesVal" class="mono">10 分钟</b></div>
+        <input type="range" id="minutes" min="3" max="30" value="10">
+      </div>
+    </div>
+
+    <div class="row voices">
+      <div>
+        <div class="field-label">主持人</div>
+        <select id="hostVoice"></select>
+      </div>
+      <div>
+        <div class="field-label">搭档</div>
+        <select id="partnerVoice"></select>
+      </div>
+      <div>
+        <div class="field-label">引擎</div>
+        <select id="provider">
+          <option value="mock">Mock（联调）</option>
+          <option value="api">DeepSeek API</option>
+        </select>
+        <div class="micro">Mock 用于零成本联调；配置 DeepSeek API Key 后切换真实写稿</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <span class="hint mono" id="costHint">预计耗时 ~2 分钟 · 成本 ≈¥0.07</span>
+      <button class="primary" id="create">🎙 生成播客 <kbd class="kbd">⌘⏎</kbd></button>
+    </div>
+    <div id="createErr" class="err" hidden></div>
+
+    <details class="rssbox">
+      <summary>RSS 订阅批量生成</summary>
+      <div class="rssrow">
+        <input id="rssUrl" placeholder="粘贴 RSS/Atom 地址（https://.../rss.xml）">
+        <select id="rssLimit"><option>3</option><option selected>5</option><option>10</option></select>
+        <button class="ghost amber" id="rssPreview">预览</button>
+      </div>
+      <div id="rssItems" class="small"></div>
+      <button class="primary" id="rssBatch" hidden style="margin-top:8px">批量生成</button>
+    </details>
+  </section>
+
+  <!-- 右：统计 -->
+  <aside class="card stats">
+    <h2>本月概览</h2>
+    <div class="stat"><div class="num" id="stJobs">0</div><div class="lbl">生成集数</div></div>
+    <div class="stat"><div class="num mono" id="stDone">0</div><div class="lbl">已完成</div></div>
+    <div class="stat"><div class="num" id="stPass">—</div><div class="lbl">质检通过率</div></div>
+    <div class="stat"><div class="num mono" id="stCost">¥0.00</div><div class="lbl">总成本（估算）</div></div>
+    <div class="week">
+      <div class="week-title">本周产出（分钟）</div>
+      <div class="bars" id="weekBars"></div>
+      <div class="week-days mono"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    </div>
+    <div class="foot">SoulX-Podcast 本地合成 · DeepSeek 写稿</div>
+  </aside>
+
+  <!-- 下：任务列表 -->
+  <section class="card tasks">
+    <div class="tasks-head">
+      <h2>最近任务</h2>
+      <span class="mono small" id="autoRefresh"><a href="/tasks" style="color:var(--amber)">全部任务 →</a></span>
+    </div>
+    <div id="tasks" class="tasklist"><div class="empty">还没有任务，从上面开始创作吧</div></div>
+  </section>
+</main>
+
+<dialog id="detail">
+  <div class="dlg-head">
+    <h3 id="dTitle">任务详情</h3>
+    <button class="ghost" onclick="document.getElementById('detail').close()">关闭</button>
+  </div>
+  <div id="dMeta" class="mono small"></div>
+  <div id="dTurns" class="turns"></div>
+</dialog>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
