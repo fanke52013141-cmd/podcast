@@ -9,16 +9,24 @@ async function init() {
   await loadSettings();
   bind();
   await setupQueue();
-  // 左侧导航高亮
-  const links = document.querySelectorAll(".setnav a");
-  window.addEventListener("scroll", () => {
-    let cur = links[0];
-    for (const a of links) {
-      const sec = document.querySelector(a.getAttribute("href"));
-      if (sec && sec.getBoundingClientRect().top < 140) cur = a;
+  // 左侧导航高亮：点击立即选中；滚动时按分区位置高亮（页面触底时选中最后一项）
+  const links = [...document.querySelectorAll(".setnav a")];
+  const setActive = (a) => links.forEach(x => x.classList.toggle("on", x === a));
+  links.forEach(a => a.addEventListener("click", () => setActive(a)));
+  const onScroll = () => {
+    const nearBottom = window.innerHeight + window.scrollY
+      >= document.documentElement.scrollHeight - 8;
+    let cur = nearBottom ? links[links.length - 1] : links[0];
+    if (!nearBottom) {
+      for (const a of links) {
+        const sec = document.querySelector(a.getAttribute("href"));
+        if (sec && sec.getBoundingClientRect().top < 140) cur = a;
+      }
     }
-    links.forEach(a => a.classList.toggle("on", a === cur));
-  });
+    setActive(cur);
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
   document.querySelectorAll("[data-soon]").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); toast("该页面在后续迭代中"); }));
 }

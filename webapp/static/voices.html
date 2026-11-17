@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>音色库 · AI 播客工坊</title>
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v=0.2">
 </head>
 <body>
 <header class="topbar">
@@ -19,13 +19,15 @@
 </header>
 
 <main class="vwrap">
+  <div class="vhero">
+    <h1>音色库</h1>
+    <p class="lead">为每档节目找到对的声音。共 <b id="vCount">0</b> 个音色 · 关键词检索（CLAP 语义检索 P3-3 接入）</p>
+  </div>
+
   <section class="card vsearch">
-    <div class="searchrow">
-      <input id="q" placeholder="用一句话描述你要的声音，例如：温暖低沉的男声，适合深夜电台">
-      <button class="ghost" id="btnNewVoice">＋ 新建音色</button>
-      <button class="primary" id="btnDesign">✨ AI 设计新音色</button>
-    </div>
-    <div class="small">关键词检索 · CLAP 语义检索在 P3-3 接入 · 共 <b id="vCount">0</b> 个音色</div>
+    <input id="q" placeholder="用一句话描述你要的声音，例如：温暖低沉的男声，适合深夜电台">
+    <button class="ghost" id="btnNewVoice">＋ 新建音色</button>
+    <button class="primary" id="btnDesign">✨ AI 设计新音色</button>
   </section>
 
   <section class="vgrid" id="grid"></section>
@@ -66,6 +68,6 @@
 </dialog>
 
 <div id="toast" class="toast" hidden></div>
-<script src="/static/voices.js"></script>
+<script src="/static/voices.js?v=0.2"></script>
 </body>
 </html>

@@ -32,13 +32,13 @@ async function load() {
   const [cls, label] = map[job.status] || ["script", job.status];
   const st = $("jState"); st.textContent = label; st.className = "badge " + cls;
   $("turnCount").textContent = job.script ? `· ${job.script.text.length} 轮` : "";
-  $("engState").textContent = "引擎状态：" + (job.provider === "mock" ? "Mock 联调" : "DeepSeek API");
   const cost = job.llm_cost_yuan ? ` · LLM ≈¥${job.llm_cost_yuan}` : "";
   const toks = (job.llm_tokens_in || job.llm_tokens_out)
     ? ` · tokens ${job.llm_tokens_in}+${job.llm_tokens_out}` : "";
-  $("dMeta").textContent =
-    `状态 ${job.status} · ${job.minutes} 分钟 · ${job.style} · 预计 ${Math.round((job.est_seconds || job.minutes * 60) / 60)} min`
-    + cost + toks + (job.error ? ` · ❌ ${job.error}` : "");
+  $("engState").textContent =
+    "引擎状态：" + (job.provider === "mock" ? "Mock 联调" : "DeepSeek API")
+    + ` · ${job.minutes} 分钟 · 预计 ${Math.round((job.est_seconds || job.minutes * 60) / 60)} min`
+    + cost + toks;
   if (job.error) { const e = $("valErr"); e.hidden = false; e.textContent = "❌ " + job.error; }
 }
 

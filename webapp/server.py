@@ -25,6 +25,17 @@ def _startup():
     jobmgr.start_scheduler()          # P3-5 夜间队列轮询（DISABLE_SCHEDULER=1 可关）
 
 
+@app.middleware("http")
+async def no_cache_for_dev(request, call_next):
+    """开发期静态资源禁用启发式缓存：每次都带条件请求，改动即时可见。"""
+    resp = await call_next(request)
+    p = request.url.path
+    if p.startswith("/static") or p in ("/", "/tasks", "/voices", "/settings", "/traces") \
+            or p.startswith("/job/"):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.get("/")
 def index():
     return FileResponse(BASE_DIR / "webapp" / "static" / "index.html")

@@ -1,18 +1,26 @@
-/* Obsidian Waveform —— 深色录音室主题（与 Stitch 设计稿一致） */
+/* Kosmik 暖阳工作室主题（参考 kosmik.app；布局与功能与 Stitch 设计稿一致） */
 :root{
-  --bg:#111214; --card:#1B1D21; --line:#2A2D33; --line2:#373B43;
-  --amber:#F59E0B; --green:#34D399; --red:#F87171;
-  --txt:#E3E2E4; --txt2:#9CA3AF; --mono:'JetBrains Mono',Consolas,monospace;
+  --bg:#FAF3E6; --card:#FFFDF6; --surface2:#FFF8EA;
+  --line:#E6DCBE; --line2:#D9CBA4;
+  --amber:#EE8A31; --amber-deep:#B45309;
+  --green:#0F9D6B; --red:#D9534F;
+  --txt:#2B251C; --txt2:#8A7F6A; --mono:'JetBrains Mono',Consolas,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(1100px 700px at 88% -8%, #FDF7EA 0%, transparent 58%),
+    radial-gradient(900px 650px at -8% 108%, #F6EDD8 0%, transparent 55%),
+    var(--bg);
+  color:var(--txt);
   font-family:'Hanken Grotesk','PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
 .mono{font-family:var(--mono)}
 .small{font-size:12px;color:var(--txt2)}
 
 /* 顶栏 */
 .topbar{display:flex;align-items:center;gap:32px;padding:14px 28px;
-  border-bottom:1px solid var(--line);background:#141618;position:sticky;top:0;z-index:5}
+  border-bottom:1px solid var(--line);background:var(--surface2);position:sticky;top:0;z-index:5}
 .logo{font-weight:700;font-size:16px}
 .logo .wave{color:var(--amber);letter-spacing:-2px}
 .topbar nav{display:flex;gap:22px;flex:1}
@@ -32,7 +40,7 @@ body{background:var(--bg);color:var(--txt);
 
 /* 创作卡 */
 .sub{color:var(--txt2);font-size:12px;margin:4px 0 14px}
-textarea{width:100%;background:#141618;border:1px solid var(--line);border-radius:8px;
+textarea{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:8px;
   color:var(--txt);padding:10px 12px;font:inherit;resize:vertical}
 textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
 .drop{margin-top:10px;border:1px dashed var(--line2);border-radius:8px;padding:14px;
@@ -42,14 +50,14 @@ textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 1px var(-
 .field-label{font-size:12px;color:var(--txt2);margin:14px 0 6px}
 .field-label b{color:var(--amber);font-weight:600}
 .styles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.styles button{background:#141618;border:1px solid var(--line);border-radius:8px;
+.styles button{background:var(--surface2);border:1px solid var(--line);border-radius:8px;
   color:var(--txt2);padding:8px 4px;font:inherit;font-size:13px;cursor:pointer}
 .styles button:hover{border-color:var(--line2);color:var(--txt)}
 .styles button.on{background:rgba(245,158,11,.12);border-color:var(--amber);color:var(--amber)}
 input[type=range]{width:100%;accent-color:var(--amber)}
 .row{display:flex;gap:14px}
 .row>div{flex:1}
-.row select{width:100%;background:#141618;border:1px solid var(--line);border-radius:8px;
+.row select{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:8px;
   color:var(--txt);padding:8px 10px;font:inherit}
 .actions{display:flex;align-items:center;justify-content:space-between;margin-top:18px}
 .hint{color:var(--txt2);font-size:12px}
@@ -75,11 +83,11 @@ button.ghost:hover{color:var(--txt);border-color:var(--line2)}
 #autoRefresh{color:var(--txt2);font-size:11px}
 .tasklist{display:flex;flex-direction:column;gap:8px}
 .empty{color:var(--txt2);text-align:center;padding:28px 0}
-.task{display:flex;align-items:center;gap:14px;background:#141618;
+.task{display:flex;align-items:center;gap:14px;background:var(--surface2);
   border:1px solid var(--line);border-radius:10px;padding:10px 14px;cursor:pointer}
 .task:hover{border-color:var(--line2)}
 .task .cover{width:44px;height:44px;border-radius:8px;flex:none;
-  background:linear-gradient(135deg,#292a2c,#1f2022);display:flex;align-items:center;
+  background:linear-gradient(135deg,#292a2c,#F3E9D2);display:flex;align-items:center;
   justify-content:center;color:var(--amber);font-size:18px}
 .task .info{flex:1;min-width:0}
 .task .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -117,7 +125,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .step{flex:1;text-align:center;position:relative}
 .step .dot{width:30px;height:30px;border-radius:50%;margin:0 auto 6px;display:flex;
   align-items:center;justify-content:center;font-size:13px;font-weight:700;
-  background:#141618;border:1px solid var(--line);color:var(--txt2)}
+  background:var(--surface2);border:1px solid var(--line);color:var(--txt2)}
 .step .lbl{font-size:12px;color:var(--txt2)}
 .step .lbl em{display:block;font-style:normal;color:var(--amber);font-size:10px;margin-top:2px}
 .step .line{position:absolute;top:15px;left:calc(50% + 20px);width:calc(100% - 40px);height:1px;background:var(--line)}
@@ -128,19 +136,19 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .step.skip .dot{opacity:.45}
 .step.fail .dot{border-color:var(--red);color:var(--red)}
 .synthprog{margin-top:16px}
-.synthprog .bar{height:5px;border-radius:3px;background:#141618;margin-top:6px;overflow:hidden}
+.synthprog .bar{height:5px;border-radius:3px;background:var(--surface2);margin-top:6px;overflow:hidden}
 .synthprog .fill{height:100%;background:var(--amber);border-radius:3px;transition:width .6s}
 .synthprog .mono{font-size:12px;color:var(--amber)}
 
 /* 播放器 + 开关 */
 .playercard{display:grid;grid-template-columns:1fr 240px;gap:20px}
-#wave{width:100%;height:88px;background:#141618;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+#wave{width:100%;height:88px;background:var(--surface2);border:1px solid var(--line);border-radius:8px;cursor:pointer}
 .pctrl{display:flex;align-items:center;gap:14px;margin-top:12px}
 .playbtn{width:44px;height:44px;border-radius:50%;border:none;background:var(--amber);
   color:#111214;font-size:17px;cursor:pointer;box-shadow:0 0 12px rgba(245,158,11,.35)}
 .playbtn:disabled{opacity:.35;box-shadow:none;cursor:not-allowed}
 .pctrl select,.pctrl input[type=range]{accent-color:var(--amber)}
-.pctrl select{background:#141618;border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:5px}
+.pctrl select{background:var(--surface2);border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:5px}
 .nowav{margin-top:10px}
 .switchcard{border-left:1px solid var(--line);padding-left:20px}
 .sw{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
@@ -151,7 +159,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 
 /* 轮次列表 */
 .turnlist{display:flex;flex-direction:column;gap:7px;max-height:480px;overflow:auto}
-.trow{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#141618}
+.trow{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
 .trow .who{flex:none;width:30px;font-family:var(--mono);font-weight:700;font-size:12px}
 .trow.s1 .who{color:var(--amber)}.trow.s2 .who{color:#7DA2C4}
 .trow .txt{flex:1;font-size:13px;line-height:1.55}
@@ -160,13 +168,13 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .tag{display:inline-block;background:rgba(245,158,11,.15);color:var(--amber);border-radius:5px;padding:0 6px;font-size:11px;margin:0 2px}
 
 /* toast */
-.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#23262B;
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:#FFF6E3;
   border:1px solid var(--line2);border-radius:10px;padding:10px 18px;font-size:13px;z-index:99;
   box-shadow:0 8px 24px rgba(0,0,0,.5)}
 
 /* ---------- 工作台优化增量（Stitch 优化版落地） ---------- */
 .task{transition:border-color .15s,background .15s}
-.task:hover{border-color:rgba(245,158,11,.4);background:#1a1c20}
+.task:hover{border-color:rgba(245,158,11,.4);background:#FBF2DD}
 .task .detail-link{flex:none;color:var(--amber);font-size:12px;text-decoration:none;white-space:nowrap}
 .task .detail-link:hover{color:#fbbf24;text-decoration:underline}
 .kbd{font-family:var(--mono);font-size:10px;background:rgba(0,0,0,.3);border:1px solid rgba(0,0,0,.25);
@@ -186,7 +194,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .setnav{align-self:start;position:sticky;top:76px;display:flex;flex-direction:column;padding:12px}
 .setnav a{color:var(--txt2);text-decoration:none;padding:10px 12px;border-radius:8px;font-size:13px;
   border-left:2px solid transparent;margin-bottom:2px}
-.setnav a:hover{color:var(--txt);background:#141618}
+.setnav a:hover{color:var(--txt);background:var(--surface2)}
 .setnav a.on{color:var(--amber);background:rgba(245,158,11,.08);border-left-color:var(--amber)}
 .setnav .navfoot{margin-top:18px;padding:10px 12px;border-top:1px solid var(--line);line-height:1.6}
 .setmain{display:flex;flex-direction:column;gap:16px}
@@ -195,7 +203,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .frow{display:flex;gap:16px;margin-bottom:14px;align-items:flex-start}
 .frow>div{flex:1}
 .frow .grow{flex:2}
-.frow input,.frow select{width:100%;background:#141618;border:1px solid var(--line);border-radius:8px;
+.frow input,.frow select{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:8px;
   color:var(--txt);padding:9px 11px;font:inherit}
 .frow input:focus,.frow select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
 .frow input[readonly]{color:var(--txt2)}
@@ -205,7 +213,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .ghost.amber{color:var(--amber);border-color:rgba(245,158,11,.4)}
 .ghost.amber:hover{border-color:var(--amber)}
 .tagchips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{background:#141618;border:1px solid var(--line);border-radius:8px;color:var(--txt2);
+.chip{background:var(--surface2);border:1px solid var(--line);border-radius:8px;color:var(--txt2);
   padding:6px 12px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .chip input{accent-color:var(--amber)}
 .chip.on{border-color:var(--amber);color:var(--amber);background:rgba(245,158,11,.08)}
@@ -217,7 +225,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 /* ---------- 音色库（UI-5） ---------- */
 .vwrap{max-width:1180px;margin:0 auto;padding:22px 28px;display:flex;flex-direction:column;gap:16px}
 .vsearch .searchrow{display:flex;gap:12px;margin-bottom:8px}
-.vsearch input{flex:1;background:#141618;border:1px solid var(--line);border-radius:10px;
+.vsearch input{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:10px;
   color:var(--txt);padding:12px 14px;font:inherit}
 .vsearch input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
 .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
@@ -249,12 +257,12 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .rssbox summary{cursor:pointer;color:var(--txt2);font-size:13px}
 .rssbox summary:hover{color:var(--amber)}
 .rssrow{display:flex;gap:8px;margin-top:10px}
-.rssrow input{flex:1;background:#141618;border:1px solid var(--line);border-radius:8px;
+.rssrow input{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:8px;
   color:var(--txt);padding:8px 10px;font:inherit}
-.rssrow select{background:#141618;border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:6px}
+.rssrow select{background:var(--surface2);border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:6px}
 .rssbox .small{margin-top:8px;color:var(--txt2);line-height:1.7}
 .erow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.erow input,.erow select{background:#141618;border:1px solid var(--line);border-radius:6px;
+.erow input,.erow select{background:var(--surface2);border:1px solid var(--line);border-radius:6px;
   color:var(--txt);padding:5px 8px;font:inherit;font-family:var(--mono)}
 .erow input{width:90px}
 .trow .badge{white-space:nowrap}
@@ -262,7 +270,178 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 /* ---------- 节目模板 / 夜间队列 ---------- */
 .tplrow{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
 .tplrow .small{color:var(--txt2);font-size:12px;display:flex;align-items:center;gap:8px}
-.tplrow select{background:#141618;border:1px solid var(--line);border-radius:8px;
+.tplrow select{background:var(--surface2);border:1px solid var(--line);border-radius:8px;
   color:var(--txt);padding:7px 10px;font:inherit;min-width:170px}
 .qlist .task{align-items:flex-start}
 .qtopics{color:var(--txt2);font-size:11px;margin-top:3px;line-height:1.5}
+
+/* ================= Kosmik 重构层（覆盖上方深色残留样式） ================= */
+
+/* 标题：超粗圆黑排版 */
+.logo,.card h2,.setcard h2,.dlg-head h3,.thead h2{font-weight:900;letter-spacing:-.02em;color:#1C1710}
+.logo{font-size:17px}
+
+/* 顶部导航 */
+.topbar{background:var(--card);border-bottom:1.5px solid var(--line)}
+.topbar nav a.active{color:var(--amber);border-bottom-color:var(--amber)}
+
+/* 卡片：平面 + 1.5px 暖边框，无投影 */
+.card{border:1.5px solid var(--line);border-radius:14px;box-shadow:none}
+
+/* 按钮：Kosmik 厚实橙 */
+button.primary{background:var(--amber);color:#fff;border:2px solid var(--amber-deep);
+  border-radius:8px;box-shadow:0 3px 0 var(--amber-deep);font-weight:800}
+button.primary:hover{filter:none;transform:translateY(-1px);box-shadow:0 4px 0 var(--amber-deep)}
+button.primary:active{transform:translateY(1px);box-shadow:0 1px 0 var(--amber-deep)}
+button.primary .kbd{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.45);color:#fff}
+button.ghost{background:var(--card);border:1.5px solid var(--line2);color:#6B6255}
+button.ghost:hover{color:var(--txt);border-color:var(--amber)}
+button.ghost.amber{color:var(--amber);border-color:rgba(238,138,49,.55)}
+button.ghost.amber:hover{border-color:var(--amber);background:rgba(238,138,49,.08)}
+.ghost.amber:disabled{opacity:.55}
+
+/* 输入类 */
+textarea,.frow input,.frow select,.row select,.vsearch input,.rssrow input,
+.erow input,.erow select,.keyrow input,.pctrl select,.tplrow select,.rssrow select,
+.setnav select{background:var(--surface2);border:1.5px solid var(--line);color:var(--txt)}
+textarea:focus,.frow input:focus,.frow select:focus,.vsearch input:focus,
+.keyrow input:focus,.rssrow input:focus{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+
+/* 风格九宫格：选中 = 橙底白字粗体（Kosmik chips） */
+.styles button{background:var(--surface2);border:1.5px solid var(--line);color:var(--txt)}
+.styles button:hover{border-color:var(--line2)}
+.styles button.on{background:var(--amber);border:2px solid var(--amber-deep);
+  color:#fff;font-weight:800}
+
+/* 副语言/标签 chips 保持浅橙 tint */
+.tag,.chip.on{background:rgba(238,138,49,.14);color:var(--amber);border:1px solid rgba(238,138,49,.35)}
+.chip{background:var(--surface2);border:1.5px solid var(--line);color:#6B6255}
+.chip.on{color:var(--amber)}
+
+/* 徽章（浅色底用深色文字） */
+.badge.done{background:rgba(15,157,107,.12);color:var(--green);border:1px solid rgba(15,157,107,.35)}
+.badge.running{background:rgba(238,138,49,.14);color:#B45309;border:1px solid rgba(238,138,49,.4)}
+.badge.failed{background:rgba(217,83,79,.12);color:var(--red);border:1px solid rgba(217,83,79,.35)}
+.badge.script{background:rgba(138,127,106,.12);color:#6B6255;border:1px solid var(--line2)}
+.detail-link{color:var(--amber)}
+
+/* 任务行 / 封面 */
+.task{background:var(--surface2);border:1.5px solid var(--line)}
+.task:hover{border-color:rgba(238,138,49,.5);background:#FFF3DD}
+.task .cover{background:linear-gradient(135deg,#F6E7C6,#EFDFB9);color:var(--amber)}
+.qlist .task:hover{background:#FFF3DD}
+
+/* 步骤条 */
+.step .dot{background:var(--surface2);border:1.5px solid var(--line);color:var(--txt2)}
+.step.done .dot{background:rgba(15,157,107,.12);border-color:var(--green);color:var(--green)}
+.step.done .line{background:var(--green)}
+.step.active .dot{border:2px solid var(--amber);color:var(--amber);
+  box-shadow:0 0 0 3px rgba(238,138,49,.22)}
+.step.active .lbl{color:var(--amber)}
+
+/* 播放器 */
+#wave{background:var(--surface2);border:1.5px solid var(--line)}
+.playbtn{background:var(--amber);color:#fff;border:2px solid var(--amber-deep);
+  box-shadow:0 3px 0 var(--amber-deep)}
+.playbtn:hover{transform:translateY(-1px)}
+.playbtn:active{transform:translateY(1px);box-shadow:0 1px 0 var(--amber-deep)}
+.pctrl input[type=range]{accent-color:var(--amber)}
+.switchcard{border-left:1.5px solid var(--line)}
+.sw.lock span{color:var(--amber-deep)}
+
+/* 弹窗 / toast / 悬浮条 */
+dialog{background:var(--card);border:1.5px solid var(--line2);color:var(--txt)}
+dialog::backdrop{background:rgba(43,37,28,.35)}
+.actionbar{background:var(--card);border:1.5px solid var(--line2);
+  box-shadow:0 6px 18px rgba(60,48,28,.15)}
+.toast{background:var(--card);border:1.5px solid var(--line2);color:var(--txt);
+  box-shadow:0 6px 18px rgba(60,48,28,.18)}
+
+/* 周产出条形图 */
+.week .bar{background:linear-gradient(180deg,#F5A94F,#EE8A31)}
+.week .bar.today{box-shadow:0 0 0 2px rgba(238,138,49,.3)}
+
+/* 夜间队列列表 hover/选中反馈 */
+.qlist .task{cursor:default}
+.qlist .task:hover{border-color:rgba(238,138,49,.5)}
+
+/* 拖拽区 */
+.drop{border:1.5px dashed var(--line2);background:transparent}
+.drop.over{border-color:var(--amber);background:rgba(238,138,49,.06)}
+
+/* 编辑弹窗 */
+#editDlg .actionbar{position:static}
+.vacts{border-top:1.5px solid var(--line)}
+
+/* ================= 音色库 v2 —— 有设计感的卡片重做 ================= */
+
+/* Hero 大标题（Kosmik 式编辑排版） */
+.vhero{padding:6px 4px 2px}
+.vhero h1{font-size:34px;font-weight:900;letter-spacing:-.02em;color:#1C1710;line-height:1.15}
+.vhero .lead{color:var(--txt2);font-size:13.5px;margin-top:6px}
+.vhero .lead b{color:var(--amber-deep)}
+
+/* 搜索条：悬浮药丸，左输入右双钮 */
+.vsearch{display:flex;gap:10px;align-items:center;border-radius:999px;
+  padding:10px 12px;border:1.5px solid var(--line);box-shadow:0 4px 14px rgba(60,48,28,.06)}
+.vsearch input{flex:1;background:transparent;border:none;outline:none;
+  color:var(--txt);font:inherit;font-size:14.5px;padding:4px 6px}
+.vsearch .ghost{border-radius:999px;white-space:nowrap}
+.vsearch .primary{border-radius:999px;white-space:nowrap;padding:9px 18px}
+
+/* 卡片：更宽松的呼吸感 + hover 微浮起 */
+.vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.vcard{background:var(--card);border:1.5px solid var(--line);border-radius:16px;
+  padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.vcard:hover{transform:translateY(-3px);border-color:var(--amber);
+  box-shadow:0 10px 26px rgba(180,83,9,.10)}
+
+/* 头部：声纹瓷砖 + 名字 + 许可证小标 */
+.vtop{display:flex;align-items:center;gap:12px}
+.vtile{width:56px;height:56px;border-radius:14px;flex:none;position:relative;
+  background:linear-gradient(135deg,var(--tb),var(--tb2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
+.vtile canvas{display:block}
+.vmeta{flex:1;min-width:0}
+.vname{font-size:16.5px;font-weight:800;color:#1C1710;letter-spacing:-.01em}
+.vsub{font-size:12px;color:var(--txt2);margin-top:2px}
+.lic{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.08em;
+  color:#6B6255;background:var(--surface2);border-radius:999px;padding:3px 9px}
+.lic.ok{color:var(--green);background:rgba(15,157,107,.10)}
+
+/* 标签：无边框 tint 药丸 */
+.vtags{display:flex;flex-wrap:wrap;gap:6px}
+.vtag{font-size:11.5px;color:#7A6F5A;background:#F6EDD8;border-radius:999px;padding:3px 10px}
+.vtag.warn{color:#B45309;background:rgba(238,138,49,.12)}
+
+/* 细波形条 */
+.vwave{border-radius:8px;background:var(--surface2);padding:4px 6px}
+.vwave canvas{width:100%;height:26px;display:block}
+
+/* 动作行：主试听药丸 + 编辑 + 分段角色切换 */
+.vacts{display:flex;align-items:center;gap:8px}
+.vplay{flex:none;background:var(--amber);color:#fff;border:none;border-radius:999px;
+  padding:7px 14px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:transform .12s ease}
+.vplay:hover{transform:scale(1.04)}
+.vedit{background:none;border:none;color:var(--txt2);font:inherit;font-size:12.5px;
+  cursor:pointer;padding:7px 4px}
+.vedit:hover{color:var(--txt);text-decoration:underline}
+.seg{margin-left:auto;display:flex;background:#F6EDD8;border-radius:10px;padding:3px;gap:2px}
+.segb{border:none;background:transparent;color:#6B6255;font:inherit;font-size:12px;
+  padding:5px 11px;border-radius:8px;cursor:pointer}
+.segb:hover{color:var(--txt)}
+.segb.on{background:var(--amber);color:#fff;font-weight:700;
+  box-shadow:0 1px 3px rgba(180,83,9,.35)}
+
+/* 绑定提示：琥珀点 + 细字 */
+.vbind{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--amber-deep);
+  background:rgba(238,138,49,.07);border-radius:8px;padding:6px 10px}
+.vbind .vdot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none}
+
+/* 空状态与合规 */
+.vgrid .empty{border:1.5px dashed var(--line2);border-radius:14px;padding:40px 0;
+  color:var(--txt2);text-align:center}
+.compliance{margin-top:6px}

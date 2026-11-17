@@ -30,40 +30,43 @@ function render() {
       .join(" ").toLowerCase().includes(q);
   const list = voices.filter(hit);
   $("vCount").textContent = list.length;
-  const hue = i => (i * 47) % 360;
+  const HUES = [28, 205, 160, 350, 262, 96, 18, 232];   // 精选柔和色板
   $("grid").innerHTML = list.length ? list.map((v, i) => {
-    const role = defaults.host === v.id ? "主持人 · 跨集一致"
-      : defaults.partner === v.id ? "搭档 · 角色绑定" : "";
-    const hasAudio = !!v.prompt_audio;
-    return `<div class="vcard card">
-      <div class="vhead">
-        <div class="avatar" style="background:hsl(${hue(i)},45%,28%);border-color:hsl(${hue(i)},70%,55%)">
-          <canvas class="miniwave" data-seed="${v.id}" width="72" height="36"></canvas></div>
-        <div class="vname"><b>${v.name}</b>
-          <span class="small">${v.gender === "female" ? "女声" : "男声"} · ${v.age_range}岁</span></div>
-        ${v.license_status === "authorized" ? '<span class="badge done">授权</span>'
-          : v.license_status === "generated" ? '<span class="badge script">AI生成</span>'
-          : '<span class="badge script">公开</span>'}
+    const h = HUES[i % HUES.length];
+    const isHost = defaults.host === v.id, isPartner = defaults.partner === v.id;
+    return `<div class="vcard">
+      <div class="vtop">
+        <div class="vtile" style="--tb:hsl(${h} 55% 91%);--tb2:hsl(${h} 46% 83%);--bar:hsl(${h} 42% 36%)">
+          <canvas class="miniwave" data-seed="${v.id}" width="88" height="40"></canvas>
+        </div>
+        <div class="vmeta">
+          <div class="vname">${v.name}</div>
+          <div class="vsub">${v.gender === "female" ? "女声" : "男声"} · ${v.age_range}岁</div>
+        </div>
+        <span class="lic ${v.license_status === "authorized" ? "ok" : ""}">${v.license_status === "authorized" ? "授权" : v.license_status === "generated" ? "AI 生成" : "公开"}</span>
       </div>
-      <div class="vtags">${(v.style_tags || []).map(t => `<span class="chip on">${t}</span>`).join("")}
-        ${hasAudio ? "" : '<span class="chip" title="参考音频未上传">⚠ 无音频</span>'}</div>
-      ${role ? `<div class="roleline"><span class="badge done">${role}</span></div>` : ""}
+      <div class="vtags">${(v.style_tags || []).map(t => `<span class="vtag">${t}</span>`).join("")}
+        ${v.prompt_audio ? "" : '<span class="vtag warn">⚠ 待录参考音频</span>'}</div>
+      <div class="vwave"><canvas class="fullwave" data-seed="${v.id}w" width="320" height="26"></canvas></div>
       <div class="vacts">
-        <button class="ghost play" data-id="${v.id}">▶ 试听</button>
-        <button class="ghost editbtn" data-id="${v.id}">编辑</button>
-        <button class="ghost ${defaults.host === v.id ? "amber" : ""}" data-role="host" data-id="${v.id}"
-          ${defaults.host === v.id ? "disabled" : ""}>${defaults.host === v.id ? "✓ 主持人" : "设为主持"}</button>
-        <button class="ghost ${defaults.partner === v.id ? "amber" : ""}" data-role="partner" data-id="${v.id}"
-          ${defaults.partner === v.id ? "disabled" : ""}>${defaults.partner === v.id ? "✓ 搭档" : "设为搭档"}</button>
+        <button class="vplay" data-id="${v.id}">▶ 试听</button>
+        <button class="vedit" data-id="${v.id}">编辑</button>
+        <div class="seg">
+          <button class="segb ${isHost ? "on" : ""}" data-role="host" data-id="${v.id}">主持人</button>
+          <button class="segb ${isPartner ? "on" : ""}" data-role="partner" data-id="${v.id}">搭档</button>
+        </div>
       </div>
+      ${(isHost || isPartner) ? `<div class="vbind"><span class="vdot"></span>${isHost ? "主持人" : "搭档"} · 跨集一致</div>` : ""}
     </div>`;
   }).join("") : `<div class="empty" style="grid-column:1/-1">没有匹配的音色，换个描述试试</div>`;
 
-  document.querySelectorAll(".miniwave").forEach(drawMini);
-  document.querySelectorAll(".play").forEach(b => b.addEventListener("click", () => play(b.dataset.id, b)));
-  document.querySelectorAll(".editbtn").forEach(b => b.addEventListener("click", () =>
+  document.querySelectorAll(".miniwave").forEach(c => drawMini(c, true));
+  document.querySelectorAll(".fullwave").forEach(c => drawMini(c, false));
+  document.querySelectorAll(".vplay").forEach(b => b.addEventListener("click", () => play(b.dataset.id, b)));
+  document.querySelectorAll(".vedit").forEach(b => b.addEventListener("click", () =>
     openEdit(voices.find(v => v.id === b.dataset.id))));
-  document.querySelectorAll("[data-role]").forEach(b => b.addEventListener("click", async () => {
+  document.querySelectorAll(".segb").forEach(b => b.addEventListener("click", async () => {
+    if (b.classList.contains("on")) return;
     const r = await (await fetch(`/api/voices/${b.dataset.id}/set-role`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: b.dataset.role })
@@ -151,19 +154,31 @@ async function uploadAudio() {
   await refresh();
 }
 
-// ---------- 试听 / 声纹 ----------
-function drawMini(c) {
+// ---------- 试听 / 声纹（瓷砖 + 细波，柔和陶瓷色） ----------
+function drawMini(c, tile) {
   const ctx = c.getContext("2d");
   let s = [...c.dataset.seed].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 11) | 0;
   const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  ctx.clearRect(0, 0, 72, 36);
-  for (let x = 2; x < 70; x += 5) {
-    const h = 4 + rnd() * 28;
-    ctx.fillStyle = "#F59E0B";
-    ctx.globalAlpha = 0.55 + rnd() * 0.45;
-    ctx.fillRect(x, (36 - h) / 2, 3, h);
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  const barColor = tile
+    ? (getComputedStyle(c.parentElement).getPropertyValue("--bar") || "#B45309").trim()
+    : "rgba(180,83,9,.30)";
+  const n = tile ? 9 : 48, bw = tile ? 5 : 3, gap = tile ? 4.2 : 2.4;
+  const total = n * bw + (n - 1) * gap;
+  let x = (W - total) / 2;
+  for (let i = 0; i < n; i++) {
+    const h = Math.max(tile ? 8 : 4, rnd() * (H - (tile ? 10 : 6)));
+    ctx.fillStyle = barColor;
+    ctx.globalAlpha = tile ? 0.9 : 0.35 + rnd() * 0.5;
+    roundBar(ctx, x, (H - h) / 2, bw, h, bw / 2);
+    x += bw + gap;
   }
   ctx.globalAlpha = 1;
+}
+function roundBar(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
+  else ctx.fillRect(x, y, w, h);
 }
 
 async function play(id, btn) {
