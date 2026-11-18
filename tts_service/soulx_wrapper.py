@@ -35,11 +35,15 @@ def _file_hash(path: str) -> str:
 
 
 def segment_key(payload: dict, seed: int) -> str:
-    """段缓存键 = 文本 + 说话人参考音频哈希 + seed。"""
+    """段缓存键 = 文本 + 说话人参考音频哈希 + seed（兼容数组/字典两种 speakers 格式）。"""
     canon = []
     for sid, text in payload.get("text", []):
         canon.append([sid, text])
-    spk = {s["id"]: _file_hash(s["prompt_audio"]) for s in payload.get("speakers", [])}
+    spk_raw = payload.get("speakers", {})
+    if isinstance(spk_raw, dict):                    # SoulX 官方格式
+        spk = {sid: _file_hash(s.get("prompt_audio", "")) for sid, s in spk_raw.items()}
+    else:                                            # 系统契约格式（数组）
+        spk = {s["id"]: _file_hash(s.get("prompt_audio", "")) for s in spk_raw}
     raw = json.dumps({"text": canon, "speakers": spk, "seed": seed},
                      ensure_ascii=False, sort_keys=True)
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
@@ -60,8 +64,13 @@ def _split_turns_into_segments(turns: list, chars_per_sec: float = 4.5) -> list[
 
 def synthesize(script_dict: dict, out_wav: str,
                on_progress=None, seed: int = 7) -> dict:
-    """主入口：官方格式 script dict -> 24kHz wav。返回元信息。"""
+    """主入口：系统契约 script dict -> 24kHz wav。返回元信息。"""
     from contracts.models import ALLOWED_TAGS  # noqa: F401  (导入自检契约可用)
+    out_wav = os.path.abspath(out_wav)         # 子进程 cwd 在 SoulX 仓库，必须绝对路径
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for s in script_dict.get("speakers", []):   # 相对参考音路径 → 项目根绝对路径
+        if s.get("prompt_audio") and not os.path.isabs(s["prompt_audio"]):
+            s["prompt_audio"] = os.path.join(root, s["prompt_audio"])
     turns = script_dict["text"]
     speakers = {s["id"]: s for s in script_dict["speakers"]}
 
@@ -72,8 +81,11 @@ def synthesize(script_dict: dict, out_wav: str,
         if on_progress:
             on_progress(i + 1, len(segs))
         payload = {
-            "speakers": [speakers[sid] for sid in dict.fromkeys(s for s, _ in seg)
-                         if sid in speakers],
+            # SoulX 官方格式：speakers 为 dict（name -> {prompt_audio, prompt_text}），
+            # 本系统契约用数组，此处做边界转换（不侵入 SoulX）
+            "speakers": {sid: {k: v for k, v in speakers[sid].items() if k != "id"}
+                         for sid in dict.fromkeys(s for s, _ in seg)
+                         if sid in speakers},
             "text": [[s, t] for s, t in seg],
         }
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False,
@@ -92,8 +104,12 @@ def synthesize(script_dict: dict, out_wav: str,
         cmd = [sys.executable, os.path.join(REPO_DIR, "cli", "podcast.py"),
                "--json_path", tmp_json, "--model_path", MODEL_PATH,
                "--output_path", seg_wav, "--seed", str(seed)]
-        subprocess.run(cmd, check=True, cwd=REPO_DIR,
-                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        env = dict(os.environ)                       # 官方示例要求 PYTHONPATH 指向仓库根
+        env["PYTHONPATH"] = os.path.abspath(REPO_DIR) + os.pathsep + env.get("PYTHONPATH", "")
+        r = subprocess.run(cmd, cwd=REPO_DIR, env=env,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        if r.returncode != 0:
+            raise RuntimeError(f"SoulX cli 退出码 {r.returncode}: {r.stdout[-1200:]}")
         os.makedirs(CACHE_DIR, exist_ok=True)
         try:                                        # 命中失败不影响主流程
             import shutil

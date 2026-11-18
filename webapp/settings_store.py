@@ -17,6 +17,10 @@ SETTINGS_KEYS = {
     "TTS_URL", "SOULX_MODEL_PATH", "SEGMENT_MINUTES", "PARALING_TAGS",
     "DEFAULT_STYLE", "DEFAULT_MINUTES", "DEFAULT_HOST_VOICE", "DEFAULT_PARTNER_VOICE",
     "VOICESTAR_URL", "VOICESTAR_CMD",
+    # API 合成引擎（PLAN §1）：MiniMax / 豆包（火山）
+    "MINIMAX_API_KEY", "MINIMAX_BASE_URL", "MINIMAX_MODEL", "DEFAULT_MINIMAX_VOICE",
+    "DOUBAO_API_KEY", "DOUBAO_BASE_URL", "DEFAULT_DOUBAO_SPEAKER",
+    "TTS_ENGINE",
 }
 
 PARALING_ALL = ["laughter", "sigh", "breathing", "coughing", "throat_clearing"]
@@ -79,11 +83,25 @@ def snapshot() -> dict:
         },
         "tts": {
             "url": g("TTS_URL", ""),
+            "engine": g("TTS_ENGINE", ""),
             "model_path": g("SOULX_MODEL_PATH", "pretrained_models/SoulX-Podcast-1.7B"),
             "segment_minutes": int(g("SEGMENT_MINUTES", "7") or 7),
             "paraling": {t: (t in paring) for t in PARALING_ALL},
             "voicestar_url": g("VOICESTAR_URL", ""),
             "voicestar_cmd": g("VOICESTAR_CMD", ""),
+            "minimax": {
+                "key_set": bool(g("MINIMAX_API_KEY")),
+                "key_masked": masked(g("MINIMAX_API_KEY")),
+                "base_url": g("MINIMAX_BASE_URL", "https://api.minimaxi.com"),
+                "model": g("MINIMAX_MODEL", "speech-02-hd"),
+                "default_voice": g("DEFAULT_MINIMAX_VOICE", "male-qn-qingse"),
+            },
+            "doubao": {
+                "key_set": bool(g("DOUBAO_API_KEY")),
+                "key_masked": masked(g("DOUBAO_API_KEY")),
+                "base_url": g("DOUBAO_BASE_URL", "https://openspeech.bytedance.com"),
+                "default_speaker": g("DEFAULT_DOUBAO_SPEAKER", ""),
+            },
         },
         "defaults": {
             "style": g("DEFAULT_STYLE", "幽默对谈"),

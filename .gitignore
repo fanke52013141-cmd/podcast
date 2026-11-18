@@ -30,3 +30,8 @@ schedules.json
 # 杂项
 *.log
 .DS_Store
+logs/
+*.log
+# 运行时产物
+silence_*.wav
+logs/probe_out.log

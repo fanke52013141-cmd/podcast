@@ -21,27 +21,33 @@ class TTSClient:
         return self._get("/voices")
 
     # ---------- 合成 ----------
-    def synthesize(self, script_dict: dict, on_progress=None) -> dict:
-        """SSE 优先（有进度），服务端不支持时自动降级普通版。"""
+    def synthesize(self, script_dict: dict, on_progress=None, engine: str = "") -> dict:
+        """SSE 优先（有进度），服务端不支持时自动降级普通版。engine 可选覆盖服务端默认。"""
         try:
-            return self._synthesize_sse(script_dict, on_progress)
+            return self._synthesize_sse(script_dict, on_progress, engine)
         except requests.HTTPError:
             raise
         except Exception:
-            return self._synthesize_plain(script_dict)
+            return self._synthesize_plain(script_dict, engine)
 
-    def _synthesize_plain(self, script_dict: dict) -> dict:
+    def _synthesize_plain(self, script_dict: dict, engine: str = "") -> dict:
         minutes = script_dict.get("meta", {}).get("target_minutes", 10)
-        r = requests.post(f"{self.base}/synthesize", json={"script": script_dict},
+        payload = {"script": script_dict}
+        if engine:
+            payload["engine"] = engine
+        r = requests.post(f"{self.base}/synthesize", json=payload,
                           timeout=self.timeout_connect + minutes * 300)
         r.raise_for_status()
         return r.json()
 
-    def _synthesize_sse(self, script_dict: dict, on_progress=None) -> dict:
+    def _synthesize_sse(self, script_dict: dict, on_progress=None, engine: str = "") -> dict:
         minutes = script_dict.get("meta", {}).get("target_minutes", 10)
+        payload = {"script": script_dict}
+        if engine:
+            payload["engine"] = engine
         result = None
         with requests.post(f"{self.base}/synthesize/sse",
-                           json={"script": script_dict},
+                           json=payload,
                            stream=True,
                            timeout=(self.timeout_connect, minutes * 300)) as r:
             r.raise_for_status()

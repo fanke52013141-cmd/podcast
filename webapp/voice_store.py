@@ -118,3 +118,47 @@ def save_audio(voice_id: str, content: bytes, suffix: str = ".wav") -> str:
     (BASE_DIR / rel).write_bytes(content)
     update(voice_id, {"prompt_audio": rel})
     return rel
+
+
+# ---------- 第三方引擎音色兼容（MiniMax 设计/复刻，PLAN §2.0） ----------
+
+def update_engines(voice_id: str, engines: dict, path: str | Path | None = None) -> dict:
+    """写回音色的 engines 字段（如 {"minimax": {"voice_id": "..."}}）。"""
+    raw = _load(path)
+    for v in raw["voices"]:
+        if v["id"] == voice_id:
+            v["engines"] = engines
+            _save(raw, path)
+            return v
+    raise ValueError(f"音色不存在: {voice_id}")
+
+
+def find_by_minimax(remote_voice_id: str, path: str | Path | None = None) -> dict | None:
+    """按远端 voice_id 查本地音色（防重复登记）。"""
+    for v in list_voices(path):
+        if ((v.get("engines") or {}).get("minimax") or {}).get("voice_id") == remote_voice_id:
+            return v
+    return None
+
+
+def save_trial_audio(remote_voice_id: str, content: bytes,
+                     name: str = "") -> str:
+    """保存 MiniMax 设计音色的试听音频（试听接口优先播放它）。"""
+    AUDIO_DIR.mkdir(parents=True, exist_ok=True)
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", remote_voice_id)[:32] or "voice"
+    rel = f"voice_lib/audio/trial_{safe}.mp3"
+    (BASE_DIR / rel).write_bytes(content)
+    return rel
+
+
+def supported_engines(voice: dict) -> set[str]:
+    """音色可用的引擎集合（音色×引擎亲和校验，PLAN §2.0）。
+
+    本地参考音 → soulx/indextts 可用；engines.minimax 登记过 → minimax；
+    有本地参考音 → doubao（零样本克隆天然兼容）。
+    """
+    eng = {"soulx", "indextts", "doubao"} if voice.get("prompt_audio") \
+        and (BASE_DIR / voice["prompt_audio"]).exists() else set()
+    if ((voice.get("engines") or {}).get("minimax") or {}).get("voice_id"):
+        eng.add("minimax")
+    return eng

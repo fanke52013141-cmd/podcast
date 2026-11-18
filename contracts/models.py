@@ -77,6 +77,8 @@ class VoiceEntry:
     prompt_text: str = ""
     persona_name: str = ""       # 人物绑定："主持人小雅"（跨集一致）
     aliases: list[str] = field(default_factory=list)
+    # 第三方引擎登记（PLAN §2.0）：{"minimax": {"voice_id": ...}, "doubao": {...}}
+    engines: dict = field(default_factory=dict)
 
 
 def load_voice_manifest(path: str) -> dict[str, VoiceEntry]:

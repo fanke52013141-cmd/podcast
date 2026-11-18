@@ -12,9 +12,9 @@
       ],
       "speed_feel": "normal",
       "license_status": "authorized",
-      "source": "self_recorded",
+      "source": "public",
       "prompt_audio": "voice_lib/audio/v01_female_warm.wav",
-      "prompt_text": "（TODO：这里填参考音频的逐字转写，克隆质量取决于转写准确度）",
+      "prompt_text": "喜欢攀岩、徒步、滑雪的语言爱好者，以及过两天要带着全部家当去景德镇做陶瓷的白日梦想家。",
       "persona_name": "主持人小雅",
       "aliases": [
         "小雅",
@@ -33,9 +33,9 @@
       ],
       "speed_feel": "slow",
       "license_status": "authorized",
-      "source": "self_recorded",
+      "source": "public",
       "prompt_audio": "voice_lib/audio/v02_male_deep.wav",
-      "prompt_text": "（TODO）",
+      "prompt_text": "呃，还有一个就是要跟大家纠正一点，就是我们在看电影的时候，尤其是游戏玩家，看电影的时候，在看到那个到西北那边的这个陕北民谣，嗯，这个可能在想，哎，是不是他是受到了黑神话的启发？",
       "persona_name": "主持人老张",
       "aliases": [
         "老张",
@@ -161,6 +161,121 @@
       "aliases": [
         "眠眠"
       ]
+    },
+    {
+      "id": "vd_design_1",
+      "name": "深夜知性·女（AI设计）",
+      "gender": "female",
+      "age_range": "26-32",
+      "style_tags": [
+        "深夜知性·女",
+        "AI设计"
+      ],
+      "language": "zh",
+      "speed_feel": "normal",
+      "license_status": "generated",
+      "source": "minimax_designed",
+      "prompt_audio": "voice_lib/audio/trial_ttv-voice-2026111800384326-PEpfJ.mp3",
+      "prompt_text": "夜色渐深，欢迎回到我们的节目。今天我们慢慢聊，希望这段声音，能陪你度过接下来的一段时光。",
+      "persona_name": "",
+      "aliases": [],
+      "engines": {
+        "minimax": {
+          "voice_id": "ttv-voice-2026111800384326-PEpfJaIo"
+        }
+      }
+    },
+    {
+      "id": "vd_design_2",
+      "name": "阳光快嘴·男（AI设计）",
+      "gender": "male",
+      "age_range": "26-32",
+      "style_tags": [
+        "阳光快嘴·男",
+        "AI设计"
+      ],
+      "language": "zh",
+      "speed_feel": "normal",
+      "license_status": "generated",
+      "source": "minimax_designed",
+      "prompt_audio": "voice_lib/audio/trial_ttv-voice-2026111800385726-Igl5b.mp3",
+      "prompt_text": "夜色渐深，欢迎回到我们的节目。今天我们慢慢聊，希望这段声音，能陪你度过接下来的一段时光。",
+      "persona_name": "",
+      "aliases": [],
+      "engines": {
+        "minimax": {
+          "voice_id": "ttv-voice-2026111800385726-Igl5bbVK"
+        }
+      }
+    },
+    {
+      "id": "vd_design_3",
+      "name": "低沉访谈·男（AI设计）",
+      "gender": "male",
+      "age_range": "26-32",
+      "style_tags": [
+        "低沉访谈·男",
+        "AI设计"
+      ],
+      "language": "zh",
+      "speed_feel": "normal",
+      "license_status": "generated",
+      "source": "minimax_designed",
+      "prompt_audio": "voice_lib/audio/trial_ttv-voice-2026111800391026-WrDL0.mp3",
+      "prompt_text": "夜色渐深，欢迎回到我们的节目。今天我们慢慢聊，希望这段声音，能陪你度过接下来的一段时光。",
+      "persona_name": "",
+      "aliases": [],
+      "engines": {
+        "minimax": {
+          "voice_id": "ttv-voice-2026111800391026-WrDL0w4U"
+        }
+      }
+    },
+    {
+      "id": "vd_design_4",
+      "name": "漫才吐槽·女（AI设计）",
+      "gender": "female",
+      "age_range": "26-32",
+      "style_tags": [
+        "漫才吐槽·女",
+        "AI设计"
+      ],
+      "language": "zh",
+      "speed_feel": "normal",
+      "license_status": "generated",
+      "source": "minimax_designed",
+      "prompt_audio": "voice_lib/audio/trial_ttv-voice-2026111800392526-4MwZ0.mp3",
+      "prompt_text": "夜色渐深，欢迎回到我们的节目。今天我们慢慢聊，希望这段声音，能陪你度过接下来的一段时光。",
+      "persona_name": "",
+      "aliases": [],
+      "engines": {
+        "minimax": {
+          "voice_id": "ttv-voice-2026111800392526-4MwZ0KkI"
+        }
+      }
+    },
+    {
+      "id": "vd_design_5",
+      "name": "学者讲述·男（AI设计）",
+      "gender": "male",
+      "age_range": "26-32",
+      "style_tags": [
+        "学者讲述·男",
+        "AI设计"
+      ],
+      "language": "zh",
+      "speed_feel": "normal",
+      "license_status": "generated",
+      "source": "minimax_designed",
+      "prompt_audio": "voice_lib/audio/trial_ttv-voice-2026111800394026-I5aE0.mp3",
+      "prompt_text": "夜色渐深，欢迎回到我们的节目。今天我们慢慢聊，希望这段声音，能陪你度过接下来的一段时光。",
+      "persona_name": "",
+      "aliases": [],
+      "engines": {
+        "minimax": {
+          "voice_id": "ttv-voice-2026111800394026-I5aE06zg"
+        }
+      }
     }
   ]
 }
