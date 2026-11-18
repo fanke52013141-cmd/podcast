@@ -21,12 +21,6 @@ from core.logging_setup import LOG_DIR
 
 log = logsys.setup("webapp")
 
-
-def log_event(logger, event, **ctx):
-    """便捷包装（request_id/job_id 由 contextvars 自动带上）。"""
-    logsys.log_event(logger, event, **ctx)
-
-
 def _new_rid() -> str:
     import uuid as _u
     return _u.uuid4().hex[:12]
@@ -36,6 +30,18 @@ from pydantic import BaseModel
 from orchestrator.extract import extract
 from webapp import jobs as jobmgr
 from webapp import settings_store
+
+# 启动时把 .env 注入 os.environ：保证 os.getenv 在任意进程重启后都能读到
+# （此前只有设置页保存时才注入，重启后写稿/TTS 引擎拿不到 Key）
+for _k, _v in settings_store.read_env_file().items():
+    if _v and not os.environ.get(_k):
+        os.environ[_k] = _v
+
+
+def log_event(logger, event, **ctx):
+    """便捷包装（request_id/job_id 由 contextvars 自动带上）。"""
+    logsys.log_event(logger, event, **ctx)
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 app = FastAPI(title="AI 播客工坊", version="0.1.0")
@@ -771,7 +777,7 @@ def save_settings(payload: dict):
         if k not in settings_store.SETTINGS_KEYS:
             continue
         v = str(v).strip()
-        if "•" in v:                       # 掩码占位 → 不覆盖
+        if "•" in v and not k.startswith("PROMPT_"):   # 掩码占位 → 不覆盖（提示词除外）
             continue
         updates[k] = v
     if not updates:

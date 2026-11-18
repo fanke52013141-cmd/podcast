@@ -60,6 +60,29 @@ STEP_B_USER = """把下面的对话蓝本加工成最终播客脚本 JSON。
 {draft}
 ---"""
 
+# ---------- 提示词可编辑（用户需求：写稿提示词暴露到设置页）----------
+# 环境变量 PROMPT_SYSTEM_EDITOR / PROMPT_STEP_A / PROMPT_STEP_B 覆盖内置模板。
+# 覆盖模板里可用 {material} {style_desc} {words} {n_interruptions} 等占位符，
+# 与内置模板一致；留空则用内置。
+
+def _env_override(name: str) -> str | None:
+    import os
+    v = os.getenv(name, "").strip()
+    return v or None
+
+
+def system_editor() -> str:
+    return _env_override("PROMPT_SYSTEM_EDITOR") or SYSTEM_EDITOR
+
+
+def step_a_user() -> str:
+    return _env_override("PROMPT_STEP_A") or STEP_A_USER
+
+
+def step_b_user() -> str:
+    return _env_override("PROMPT_STEP_B") or STEP_B_USER
+
+
 # ---------- 九种风格模板（借鉴 ai-podcast-workflow 分类）----------
 STYLES = {
     "幽默对谈":  {"desc": "轻松搞笑，互相调侃，段子密度高但服务于主题", "n_interrupt": 4},
@@ -77,8 +100,8 @@ STYLES = {
 def step_a_prompt(material: str, style: str, minutes: int) -> str:
     s = STYLES.get(style, STYLES["幽默对谈"])
     words = int(minutes * 60 * 4.2)          # 目标字数（4.2字/秒留呼吸感）
-    return STEP_A_USER.format(material=material, style_desc=s["desc"],
-                              words=words, n_interruptions=s["n_interrupt"])
+    return step_a_user().format(material=material, style_desc=s["desc"],
+                                words=words, n_interruptions=s["n_interrupt"])
 
 
 def step_b_prompt(draft: str, speaker_ids: list[str],
@@ -86,6 +109,6 @@ def step_b_prompt(draft: str, speaker_ids: list[str],
                   allowed_tags: tuple[str, ...] = ("laughter", "sigh", "breathing",
                                                    "coughing", "throat_clearing")) -> str:
     tags_line = " ".join(f"<|{t}|>" for t in allowed_tags)
-    return STEP_B_USER.format(draft=draft, speaker_ids=speaker_ids,
-                              s1_desc=s1_desc, s2_desc=s2_desc,
-                              allowed_tags=tags_line)
+    return step_b_user().format(draft=draft, speaker_ids=speaker_ids,
+                                s1_desc=s1_desc, s2_desc=s2_desc,
+                                allowed_tags=tags_line)

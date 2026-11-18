@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>设置 · AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.7">
-<link rel="stylesheet" href="/static/duo.css?v=0.7">
-<link rel="stylesheet" href="/static/final.css?v=0.7">
+<link rel="stylesheet" href="/static/style.css?v=0.9">
+<link rel="stylesheet" href="/static/duo.css?v=0.9">
+<link rel="stylesheet" href="/static/final.css?v=0.9">
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a href="/voices?v=0.7">音色库</a>
-    <a href="/tasks?v=0.7">任务中心</a>
-    <a class="active" href="/settings?v=0.7">设置</a>
-    <a href="/logs?v=0.7">日志</a>
+    <a href="/voices?v=0.9">音色库</a>
+    <a href="/tasks?v=0.9">任务中心</a>
+    <a class="active" href="/settings?v=0.9">设置</a>
+    <a href="/logs?v=0.9">日志</a>
   </nav>
 </header>
 
@@ -79,6 +79,23 @@
         <div class="grow"><div class="field-label">VoiceStar 命令模板（与地址二选一）</div>
           <input id="sVsCmd" class="mono" placeholder="python /path/VoiceStar/inference.py --text &quot;{text}&quot; --target_duration {duration} --ref_audio &quot;{ref}&quot; --output &quot;{out}&quot;"></div>
       </div>
+
+      <div class="field-label" style="margin-top:18px">写稿账号池（多账号轮换：写稿失败自动切换下一个）</div>
+      <div class="field-label" style="margin:0 0 6px">每行一个账号 JSON：<code>{"name":"主号","base_url":"https://…/v1","api_key":"sk-…","model":"模型名"}</code></div>
+      <textarea id="sAccounts" rows="4" class="mono" style="font-size:12px" placeholder='[
+  {"name": "主号", "base_url": "https://tokenrhythm.studio/v1", "api_key": "sk-…", "model": "deepseek-v4.1-flash-1017"},
+  {"name": "备用号", "base_url": "https://api.deepseek.com", "api_key": "sk-…", "model": "deepseek-chat"}
+]'></textarea>
+      <div class="field-label" style="margin:8px 0 0">激活账号（写稿时优先使用）</div>
+      <input id="sActiveAccount" placeholder="填账号 name，如：主号（留空=按列表顺序）">
+
+      <div class="field-label" style="margin-top:20px">写稿提示词（留空=内置默认；高级）</div>
+      <div class="field-label" style="margin:0 0 6px">主编系统提示（STEP A 的角色设定）</div>
+      <textarea id="pSystem" rows="3" placeholder="留空使用内置默认"></textarea>
+      <div class="field-label" style="margin:8px 0 0">Step A · 素材改写成对话蓝本（占位符：{material} {style_desc} {words} {n_interruptions}）</div>
+      <textarea id="pStepA" rows="5" placeholder="留空使用内置默认"></textarea>
+      <div class="field-label" style="margin:8px 0 0">Step B · 蓝本加工成脚本 JSON（占位符：{draft} {speaker_ids} {s1_desc} {s2_desc} {allowed_tags}）</div>
+      <textarea id="pStepB" rows="5" placeholder="留空使用内置默认"></textarea>
 
       <div class="field-label" style="margin-top:18px">API 合成引擎（可选，与本地引擎并存）</div>
       <div class="frow">
@@ -154,6 +171,6 @@
   </div>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/settings.js?v=0.7"></script>
+<script src="/static/settings.js?v=0.9"></script>
 </body>
 </html>

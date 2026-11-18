@@ -8,7 +8,7 @@ import os, json, time
 from dataclasses import dataclass, field
 
 from contracts.models import SoulXScript, Job, load_voice_manifest
-from orchestrator.prompts import step_a_prompt, step_b_prompt, SYSTEM_EDITOR, STEP_B_SYSTEM
+from orchestrator.prompts import step_a_prompt, step_b_prompt, system_editor, step_b_user
 from orchestrator.validators import validate_script_text, parse_llm_script, build_script
 from orchestrator.term_lexicon import TermLexicon
 
@@ -23,45 +23,76 @@ class LLMResult:
     provider: str = ""
 
 
-def _make_client():
-    """返回 (client, model, provider_name)；langchain 懒加载。"""
+def _accounts() -> list[dict]:
+    """LLM 账号池：LLM_ACCOUNTS（JSON 数组）优先，否则回落单账号配置。
+
+    账号格式：{"name": "主号", "base_url": "https://…/v1",
+              "api_key": "sk-…", "model": "deepseek-v4.1-flash-1017"}
+    """
+    raw = os.getenv("LLM_ACCOUNTS", "").strip()
+    if raw:
+        try:
+            pool = json.loads(raw)
+            if isinstance(pool, list) and pool:
+                act = os.getenv("LLM_ACTIVE_ACCOUNT", "")
+                pool.sort(key=lambda a: 0 if a.get("name") == act else 1)
+                return [a for a in pool if a.get("api_key")]
+        except Exception:
+            pass
+    accs = []
+    if os.getenv("DEEPSEEK_API_KEY"):
+        accs.append({"name": "deepseek",
+                     "base_url": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+                     "api_key": os.getenv("DEEPSEEK_API_KEY"),
+                     "model": os.getenv("DEEPSEEK_MODEL", "deepseek-chat")})
+    if os.getenv("GLM_API_KEY"):
+        accs.append({"name": "glm",
+                     "base_url": os.getenv("GLM_BASE_URL",
+                                           "https://open.bigmodel.cn/api/paas/v4"),
+                     "api_key": os.getenv("GLM_API_KEY"),
+                     "model": os.getenv("GLM_MODEL", "glm-4-plus")})
+    return accs
+
+
+def _make_client(prefer: dict | None = None):
+    """返回 (client, provider_name, account)；langchain 懒加载。
+    prefer 指定账号时直接用它（账号池轮换由 call_llm 编排）。"""
     try:
         from langchain_openai import ChatOpenAI
     except ImportError as e:
         raise RuntimeError("需要 langchain-openai：pip install -r requirements.txt "
                            "（或用 --dry-run 免依赖试跑）") from e
 
-    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
-    if deepseek_key:
-        return (ChatOpenAI(model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
-                           api_key=deepseek_key,
-                           base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
-                           temperature=0.9), "deepseek")
-    glm_key = os.getenv("GLM_API_KEY")
-    if glm_key:
-        return (ChatOpenAI(model=os.getenv("GLM_MODEL", "glm-4-plus"),
-                           api_key=glm_key,
-                           base_url=os.getenv("GLM_BASE_URL",
-                                              "https://open.bigmodel.cn/api/paas/v4"),
-                           temperature=0.9), "glm")
-    raise RuntimeError("未配置 DEEPSEEK_API_KEY / GLM_API_KEY（.env 或环境变量）")
+    a = prefer or (_accounts() or [None])[0]
+    if not a or not a.get("api_key"):
+        raise RuntimeError("未配置任何 LLM 账号（设置页 → 账号池，或 .env）")
+    return (ChatOpenAI(model=a.get("model", "deepseek-chat"),
+                       api_key=a["api_key"],
+                       base_url=a.get("base_url", "https://api.deepseek.com"),
+                       temperature=0.9), a.get("name", "llm"), a)
 
 
 def call_llm(prompt: str, system: str, max_retry: int = 2) -> LLMResult:
-    client, provider = _make_client()
+    """账号池轮换：每个账号内部重试 max_retry 次，全失败换下一个账号。"""
+    pool = _accounts()
+    if not pool:
+        raise RuntimeError("未配置任何 LLM 账号（设置页 → 账号池，或 .env）")
+    act = os.getenv("LLM_ACTIVE_ACCOUNT", "")
+    pool.sort(key=lambda a: 0 if a.get("name") == act else 1)
     last_err = None
-    for _ in range(max_retry + 1):
-        try:
-            resp = client.invoke([("system", system), ("user", prompt)])
-            meta = getattr(resp, "response_metadata", {}) or {}
-            usage = meta.get("token_usage", {}) or {}
-            return LLMResult(resp.content, usage.get("prompt_tokens", 0),
-                             usage.get("completion_tokens", 0), provider)
-        except Exception as e:                     # 主通道失败 -> 备通道
-            last_err = e
-            os.environ["DEEPSEEK_API_KEY"] = ""     # 触发 _make_client 切到 GLM
-            client, provider = _make_client()
-    raise RuntimeError(f"LLM 调用失败（含备用通道）: {last_err}")
+    for acc in pool:
+        for _ in range(max_retry + 1):
+            try:
+                client, provider, _ = _make_client(prefer=acc)
+                resp = client.invoke([("system", system), ("user", prompt)])
+                meta = getattr(resp, "response_metadata", {}) or {}
+                usage = meta.get("token_usage", {}) or {}
+                return LLMResult(resp.content, usage.get("prompt_tokens", 0),
+                                 usage.get("completion_tokens", 0), provider)
+            except Exception as e:
+                last_err = e
+        # 该账号连续失败，换下一个
+    raise RuntimeError(f"LLM 调用失败（账号池 {len(pool)} 个账号均已尝试）: {last_err}")
 
 
 # ---------------- 状态对象 ----------------
@@ -78,6 +109,7 @@ class PipelineState:
     retry_count: int = 0
     job: Job | None = None
     lexicon: TermLexicon = field(default_factory=TermLexicon)
+    humanize: dict = field(default_factory=dict)
     voice_map: dict = field(default_factory=lambda: {"S1": "v01_female_warm",
                                                      "S2": "v02_male_deep"})
     tts_url: str = ""
@@ -99,7 +131,7 @@ def draft_node(s: PipelineState) -> PipelineState:
         from orchestrator.mock_llm import mock_draft
         s.draft = mock_draft(s.material or s.topic, s.minutes, s.style)
         return s
-    r = call_llm(step_a_prompt(s.material, s.style, s.minutes), SYSTEM_EDITOR)
+    r = call_llm(step_a_prompt(s.material, s.style, s.minutes), system_editor())
     s.draft = r.text
     if s.job:
         s.job.llm_tokens_in += r.tokens_in; s.job.llm_tokens_out += r.tokens_out
@@ -110,7 +142,6 @@ def rewrite_node(s: PipelineState) -> PipelineState:
     """Step B：口语化 + 富标签 + JSON 化（校验错误清单附回，模型自我修正）"""
     if s.provider == "mock":
         from orchestrator.mock_llm import mock_turns_json
-        from orchestrator.validators import parse_llm_script
         s.turns = parse_llm_script(mock_turns_json(s.draft, s.minutes))
         s.turns = s.lexicon.apply_to_turns(s.turns)
         return s
@@ -122,7 +153,7 @@ def rewrite_node(s: PipelineState) -> PipelineState:
                            "主持人小雅（温暖亲切，负责开场/收尾/控场）",
                            "搭档老张（低沉沉稳，负责案例/抬杠/补刀）",
                            allowed_tags=allowed_tags_from_env()) + err_hint
-    r = call_llm(prompt, STEP_B_SYSTEM)
+    r = call_llm(prompt, step_b_user())
     s.turns = parse_llm_script(r.text, allowed_tags=allowed_tags_from_env())
     s.turns = s.lexicon.apply_to_turns(s.turns)      # 术语读音修正
     if s.job:
@@ -132,6 +163,9 @@ def rewrite_node(s: PipelineState) -> PipelineState:
 
 def validate_node(s: PipelineState) -> PipelineState:
     s.errors = validate_script_text(s.turns, s.minutes, ["S1", "S2"])
+    # kaikou 借鉴：写稿体检（"人话"规则），问题清单在第一轮修正时附回
+    from orchestrator.humanize_lint import check_humanize
+    s.humanize = check_humanize(s.turns)
     s.retry_count += 1
     return s
 

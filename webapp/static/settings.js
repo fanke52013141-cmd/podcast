@@ -57,6 +57,15 @@ async function loadSettings() {
   // API 合成引擎（掩码展示，留空=不修改）
   $("mxState").textContent = s.tts.minimax.key_set ? `已配置 ${s.tts.minimax.key_masked}` : "未配置";
   $("dbState").textContent = s.tts.doubao.key_set ? `已配置 ${s.tts.doubao.key_masked}` : "未配置";
+  // 账号池 + 写稿提示词
+  try {
+    const accs = JSON.parse(s.llm.accounts || "[]");
+    $("sAccounts").value = accs.length ? JSON.stringify(accs, null, 2) : "";
+  } catch { $("sAccounts").value = s.llm.accounts || ""; }
+  $("sActiveAccount").value = s.llm.active_account || "";
+  $("pSystem").value = s.prompts.system_editor || "";
+  $("pStepA").value = s.prompts.step_a || "";
+  $("pStepB").value = s.prompts.step_b || "";
   $("paraling").innerHTML = Object.entries(s.tts.paraling).map(([k, on]) =>
     `<label class="chip${on ? " on" : ""}"><input type="checkbox" data-p="${k}" ${on ? "checked" : ""}>${PARALING_NAME[k]}</label>`).join("");
   $("paraling").querySelectorAll("input").forEach(c =>
@@ -166,6 +175,13 @@ async function save() {
   if (mxKey && !mxKey.includes("•")) body.MINIMAX_API_KEY = mxKey;
   const dbKey = $("sDbKey").value.trim();
   if (dbKey && !dbKey.includes("•")) body.DOUBAO_API_KEY = dbKey;
+  const accsRaw = $("sAccounts").value.trim();
+  if (accsRaw) body.LLM_ACCOUNTS = accsRaw;            // JSON 数组原样入 .env
+  body.LLM_ACTIVE_ACCOUNT = $("sActiveAccount").value.trim();
+  // 提示词：留空=恢复内置（存空串即视为未覆盖）
+  body.PROMPT_SYSTEM_EDITOR = $("pSystem").value;
+  body.PROMPT_STEP_A = $("pStepA").value;
+  body.PROMPT_STEP_B = $("pStepB").value;
   const r = await (await fetch("/api/settings", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)

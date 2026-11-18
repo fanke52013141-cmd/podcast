@@ -145,6 +145,8 @@ def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
         script = build_script(job_id, style, minutes, st.turns, voice_map,
                               {"by_id": dict(load_voice_manifest(
                                   BASE_DIR / "voice_lib" / "manifest.json"))})
+        if getattr(st, "humanize", None):
+            _set(job_id, humanize=st.humanize)
         sf = JOBS_DIR / job_id / "soulx_script.json"
         script.save(str(sf))
         # 成本估算（DeepSeek 参考价：输入 ¥2/M、输出 ¥8/M；Mock 为 0）

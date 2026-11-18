@@ -21,6 +21,10 @@ SETTINGS_KEYS = {
     "MINIMAX_API_KEY", "MINIMAX_BASE_URL", "MINIMAX_MODEL", "DEFAULT_MINIMAX_VOICE",
     "DOUBAO_API_KEY", "DOUBAO_BASE_URL", "DEFAULT_DOUBAO_SPEAKER",
     "TTS_ENGINE",
+    # 写稿提示词覆盖（留空=内置默认；PLAN 2026-11-18 · kaikou 借鉴）
+    "PROMPT_SYSTEM_EDITOR", "PROMPT_STEP_A", "PROMPT_STEP_B",
+    # LLM 账号池（JSON 数组：[{"name","base_url","api_key","model"}, …]）
+    "LLM_ACCOUNTS", "LLM_ACTIVE_ACCOUNT",
 }
 
 PARALING_ALL = ["laughter", "sigh", "breathing", "coughing", "throat_clearing"]
@@ -30,11 +34,11 @@ def read_env_file() -> dict[str, str]:
     data: dict[str, str] = {}
     if ENV_PATH.exists():
         for line in ENV_PATH.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
+            line = line.strip().rstrip("\r")       # 兼容 CRLF 行尾（\r 会污染 Key）
             if not line or line.startswith("#") or "=" not in line:
                 continue
             k, _, v = line.partition("=")
-            data[k.strip()] = v.strip().strip('"')
+            data[k.strip()] = v.strip().strip('"').rstrip("\r")
     return data
 
 
@@ -80,6 +84,13 @@ def snapshot() -> dict:
             "model": g("DEEPSEEK_MODEL", "deepseek-chat"),
             "base_url": g("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
             "temperature": 0.9,
+            "accounts": g("LLM_ACCOUNTS", "[]"),        # 账号池 JSON
+            "active_account": g("LLM_ACTIVE_ACCOUNT", ""),
+        },
+        "prompts": {
+            "system_editor": g("PROMPT_SYSTEM_EDITOR", ""),
+            "step_a": g("PROMPT_STEP_A", ""),
+            "step_b": g("PROMPT_STEP_B", ""),
         },
         "tts": {
             "url": g("TTS_URL", ""),
