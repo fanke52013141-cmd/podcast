@@ -73,8 +73,9 @@ print("== 5. 契约与组装 ==")
 mf_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                        "voice_lib", "manifest.json")
 mf = load_voice_manifest(mf_path)
-check("音色库 6-8 个", 6 <= len(mf) <= 8, f"实际 {len(mf)}")
-check("人物绑定字段存在", all(v.persona_name for v in mf.values()))
+check("音色库 >=6 个", len(mf) >= 6, f"实际 {len(mf)}")  # 含 AI 设计音色，数量动态
+check("人物绑定字段存在(内置音色)", all(v.persona_name for vid, v in mf.items() if vid.startswith("v0")))
+check("engines 字段向后兼容", all(hasattr(v, "engines") for v in mf.values()))
 sc = build_script("job1", "幽默对谈", 10, t1,
                   {"S1": "v01_female_warm", "S2": "v02_male_deep"},
                   {"by_id": {k: v for k, v in mf.items()}})

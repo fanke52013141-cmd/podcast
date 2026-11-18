@@ -20,10 +20,10 @@
 
 | ID | 任务 | 环境 | 前置 | 状态 | 验收 |
 |---|---|---|---|---|---|
-| P0-1 | 跑 `p0/p0_validate.sh`，回传 p0_report.log | [5080] | — | 🔲 | 10 步全绿 |
-| P0-2 | 分析日志：sm_120 / cu128 / 显存峰值 / RTF 实测 | 本机 | P0-1 | 🔲 | 产能模型校准（每集合成耗时） |
+| P0-1 | 跑 `p0/p0_validate.sh`，回传 p0_report.log | [5080] | — | ✅ | 10 步全绿（2026-11-18：Ubuntu24.04 WSL 重装 + torch2.7.1+cu128，sm_120 确认） |
+| P0-2 | 分析日志：sm_120 / cu128 / 显存峰值 / RTF 实测 | 本机 | P0-1 | ✅ | **实测：RTF≈0.85（67s 音频 57s 合成），显存峰值 ~8GB/16GB** |
 | P0-3 | **no_grad 审计**（借鉴 indextts2-studio，潜在 9× 提速）：profile SoulX 推理链，检查 vocoder/flow matching 是否漏 `torch.no_grad/inference_mode` | [5080] | P0-2 | 🔲 | 前后 RTF 对比数据 |
-| P0-4 | 启动 tts_service，`/health` 上报显存，闲置显存占用记录 | [5080] | P0-2 | 🔲 | 服务可访问 |
+| P0-4 | 启动 tts_service，`/health` 上报显存，闲置显存占用记录 | [5080] | P0-2 | ✅ | 服务可访问（8600 探活绿；引擎开关 soulx/indextts） |
 
 ## P1 最小可用管线（1 周）
 
@@ -38,9 +38,9 @@
 | P1-7 | **DeepSeek 实测迭代**：3 主题 × 3 风格，人工评口语感/标签密度/轮次节奏，迭代 prompt 到稳定 | 本机 | P1-2 | 🔲 | 10 稿中 8 稿无需人工改 |
 | P1-8 | 音色资产：6-8 个参考 wav(5-10s) + 逐字转写 | 用户录音/公开声 | — | 🔲 | 转写准确率 100% |
 | P1-9 | TTS 客户端 + LangGraph synthesize 节点接线 | 本机 | P1-6 | 🔨 | — |
-| P1-10 | **端到端首跑**：1 个真实脚本→wav 试听 | [5080] | P0-2 P1-6 P1-8 | ⛔ | 可听、音色稳定、无爆音 |
+| P1-10 | **端到端首跑**：1 个真实脚本→wav 试听 | [5080] | P0-2 P1-6 P1-8 | ✅ | 2026-11-18 完成：手写稿→SoulX 双引擎真音频 3 集（10.9s 冒烟 / 67s / 72s），含 BGM 成品入库任务中心 |
 | P1-11 | 素材抽取：PDF(pymupdf)/URL(trafilatura,标准库兜底+SSL降级)→research 节点 | 本机 | — | ✅ | `orchestrator/extract.py` + detect_source 单测 |
-| P1-12 | 分段合成的段缓存（已合成段跳过，重跑秒续） | 本机写/[5080]测 | P1-6 | ✅ | `segment_key`（文本+参考音频哈希+seed）；命中直接复用；键逻辑单测通过，真实命中待 P0 |
+| P1-12 | 分段合成的段缓存（已合成段跳过，重跑秒续） | 本机写/[5080]测 | P1-6 | ✅ | `segment_key`（文本+参考音频哈希+seed）；**真实命中已验证**（同内容 0.1s 秒回）；IndexTTS 路径另有轮级缓存 |
 | P1-13 | 参考音频特征预提取缓存（md5 命中跳过，借鉴 indextts2-studio；音色固定→命中 100%） | 本机写/[5080]测 | P1-6 | 🔲 | 第二次起合成省去特征提取耗时 |
 | P1-14 | 输入源扩展：RSS/Atom 订阅批量（预览+批量建任务）；本地 .xml 夹具可测 | 本机 | P1-11 | ✅ | 工作台内嵌 RSS 面板；通用"列表页"仍以 RSS 为准 |
 
@@ -56,7 +56,7 @@
 | P2-6 | 转场音效对位（借鉴 longform-workbench"句内比例"算法） | 本机 | P2-2 | ✅ | 锚点=(轮次,句内比例)；重合成/变速自动重对位（单测验证时长翻倍锚点同步漂移）；自动+手动混入 final_sfx.mp3；3 个内置音效(whoosh/ding/pop) |
 | P2-7 | VoiceStar 定长片段引擎（片头 15s/广告位 30s，可选） | [5080] | P2-1 | ✅ 接口 | `tts_service/fixed_segment.py`（VOICESTAR_URL/CMD 双模式）+ `/api/fixed-segment` + 设置页配置；未配置返回可操作 503；权重(840M)待下载 |
 | P2-8 | (可选) 封面生成接入 | 本机 | — | ✅ | PIL 绘制 1080×1080（渐变+声纹+标题），任务创建即生成，列表/任务中心显示 |
-| P2-9 | **多引擎适配层**：统一 schema 下挂 VoxCPM2(8GB 兜底)/MOSS-TTSD(重叠语音/20语言)/FireRedTTS2(流式)——借鉴融合方案"引擎路由"，SoulX 故障或特殊需求时切换 | 本机写/[5080]测 | P1-10 | 🔲 | 同一脚本 3 引擎可出音频 |
+| P2-9 | **多引擎适配层**：统一 schema 下挂 VoxCPM2(8GB 兜底)/MOSS-TTSD(重叠语音/20语言)/FireRedTTS2(流式)——借鉴融合方案"引擎路由"，SoulX 故障或特殊需求时切换 | 本机写/[5080]测 | P1-10 | 🔨 | **已有 2 引擎可切**（SoulX 默认 + IndexTTS2.5 via ComfyUI，`TTS_ENGINE` 环境变量切换，双 bat 启动入口，对比页 /static/compare.html）；VoxCPM2/MOSS-TTSD/FireRedTTS2 与自动路由待接 |
 | P2-10 | (可选) MOSS-SoundEffect 转场/环境音生成，替代部分采买音效素材 | [5080] | P2-1 | 🔲 | 文字生成转场音效入混音链 |
 | P2-11 | 一键诊断包：任务失败时自动打包 日志+输入脚本+参数+报错 栈 成单文件（借鉴 indextts2-studio 诊断脚本，可直接发给 AI 排障） | 本机 | P2-4 | ✅ | `/api/diag` 生成脱敏 zip（设置页按钮已接） |
 
@@ -117,4 +117,31 @@
 | UI-11 | 静态资源缓存治理 | ✅ | FastAPI no-cache 中间件 + 页面/资产 ?v=0.2 版本参数（浏览器启发式缓存根治） |
 | UI-12 | 版本化导航链接 | ✅ | 全站页间跳转带 ?v=0.2，与资产版本联动 |
 
-约定：**前端资产升级时同步 bump 页面链接与资产链接的 ?v= 参数**（当前 0.2）。
+约定：**前端资产升级时同步 bump 页面链接与资产链接的 ?v= 参数**（当前 0.5）。
+
+## 功能扩展轮（PLAN 2026-11-18 · 2026-11-18 深夜）
+
+| ID | 任务 | 状态 | 说明 |
+|---|---|---|---|
+| M1 | TTS API 双引擎 MiniMax + 豆包（火山） | ✅ | minimax_engine.py / doubao_engine.py；协议对照 free-creation（只读）；t2a_v2 hex/克隆/设计/零样本 references；请求级引擎路由 `_route` |
+| M2 | 音色库第三方兼容 + 音色设计工厂 | ✅ | manifest.engines / trial mp3 试听 / voice_design+voice_clone API；**5 条 AI 设计音色真跑入库**（MiniMax 真实 voice_design，14s/条）；试听页 /static/compare.html |
+| M1.5 | 工作台合成引擎选择 + 音色×引擎亲和校验 | ✅ | tts_engine 请求链贯通；不兼容组合建任务 400 拦截（故障注入验证） |
+| M3 | UI 重设计（截图→生图→Stitch 复刻→落地） | ✅ | 即梦 Seedream5.0Pro i2i 参考图 → 上传 Stitch 复刻（screen 321fc51d）→ final.css 落地：**全局禁左描边**、时长滑块圆点化、4 列引擎、概览大数字；?v=0.6 三页截图验收 |
+| 详测 | 分层走查+故障注入+E2E | ✅ | 修 3 真问题（VoiceEntry engines 兼容 / 工作台音色未传后端 / 设置页新分区）；真实 E2E：Mock 写稿→35 轮→MiniMax 真合成 200s 成品；回归 115/115 |
+
+## UI 线增补（DuoCast 风格轮 · 2026-11-18）
+
+| ID | 任务 | 状态 | 说明 |
+|---|---|---|---|
+| UI-13 | 全站 DuoCast 暖纸风换肤（参考 duo-podcast workspace-ui tokens） | ✅ | duo.css 独立层：暖纸画布 #FBF8F3 / 墨色主按钮 / 品牌橙 CTA / 蓝聚焦环 / 药丸徽章；三页截图验证 |
+| UI-14 | 品牌更名「AI 播客」+ 平面化控件 | ✅ | 全站改名；滑块/复选框/下拉全平面化（去原生 3D 质感）；?v=0.5 |
+| UI-15 | TTS 引擎对比试听页 | ✅ | /static/compare.html：SoulX(s7/s42) vs IndexTTS2.5 + 成品 BGM 版，同稿同响度条件 |
+
+## 5080 实机轮（2026-11-17~18）
+
+- ✅ WSL(Ubuntu24.04@D盘) + torch2.7.1+cu128 + SoulX 模型 5.2GB(ModelScope 源) + P0 验证（sm_120/RTF0.85/显存8GB）
+- ✅ 真实音频 3 集验证；段缓存真实验证；webapp 相对路径链路修复验证
+- ✅ 双引擎：IndexTTS2.5（ComfyUI HTTP API，逐轮+轮缓存+自适应采样率拼接）；SoulX 为默认（对话感更好，实测 A/B）
+- 🔧 修复：TTS 服务 seed 透传 / SoulX speakers 字典格式边界转换 / 输出绝对路径 / 拼接采样率 22050≠24000 / segment_key 双格式兼容
+- ✅ 测试 73/73 全绿（2026-11-18 复跑）
+- 📌 启动：`启动TTS服务.bat`(SoulX) / `启动TTS服务-IndexTTS.bat`(自动拉 ComfyUI)；显存紧张时二选一

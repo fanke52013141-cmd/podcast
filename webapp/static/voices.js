@@ -36,17 +36,16 @@ function render() {
     const isHost = defaults.host === v.id, isPartner = defaults.partner === v.id;
     return `<div class="vcard">
       <div class="vtop">
-        <div class="vtile" style="--tb:hsl(${h} 55% 91%);--tb2:hsl(${h} 46% 83%);--bar:hsl(${h} 42% 36%)">
+        <div class="vtile" style="--tb:#F0F0F0;--tb2:#E5E5E5;--bar:#525252">
           <canvas class="miniwave" data-seed="${v.id}" width="88" height="40"></canvas>
         </div>
         <div class="vmeta">
           <div class="vname">${v.name}</div>
           <div class="vsub">${v.gender === "female" ? "女声" : "男声"} · ${v.age_range}岁</div>
         </div>
-        <span class="lic ${v.license_status === "authorized" ? "ok" : ""}">${v.license_status === "authorized" ? "授权" : v.license_status === "generated" ? "AI 生成" : "公开"}</span>
       </div>
       <div class="vtags">${(v.style_tags || []).map(t => `<span class="vtag">${t}</span>`).join("")}
-        ${v.prompt_audio ? "" : '<span class="vtag warn">⚠ 待录参考音频</span>'}</div>
+        ${v.prompt_audio ? "" : '<span class="vtag warn">待录参考音频</span>'}</div>
       <div class="vwave"><canvas class="fullwave" data-seed="${v.id}w" width="320" height="26"></canvas></div>
       <div class="vacts">
         <button class="vplay" data-id="${v.id}">▶ 试听</button>
@@ -162,8 +161,8 @@ function drawMini(c, tile) {
   const W = c.width, H = c.height;
   ctx.clearRect(0, 0, W, H);
   const barColor = tile
-    ? (getComputedStyle(c.parentElement).getPropertyValue("--bar") || "#B45309").trim()
-    : "rgba(180,83,9,.30)";
+    ? (getComputedStyle(c.parentElement).getPropertyValue("--bar") || "#525252").trim()
+    : "rgba(23,23,23,.25)";
   const n = tile ? 9 : 48, bw = tile ? 5 : 3, gap = tile ? 4.2 : 2.4;
   const total = n * bw + (n - 1) * gap;
   let x = (W - total) / 2;

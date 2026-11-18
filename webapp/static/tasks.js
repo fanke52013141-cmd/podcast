@@ -2,6 +2,13 @@
 const $ = (id) => document.getElementById(id);
 let jobs = [], filter = "all";
 
+function jobTime(j) {                            // 从 job_id 解析创建时间 MM-DD HH:MM
+  try {
+    const p = j.job_id.split("-");               // YYYYMMDD-HHMMSS-xxxx
+    return `${p[0].slice(4,6)}-${p[0].slice(6,8)} ${p[1].slice(0,2)}:${p[1].slice(2,4)}`;
+  } catch { return ""; }
+}
+
 async function init() {
   document.querySelectorAll("#filters button").forEach(b =>
     b.addEventListener("click", () => {
@@ -34,9 +41,10 @@ function render() {
   el.innerHTML = list.map(j => {
     const [cls, label] = badge[j.status] || ["script", j.status];
     return `<div class="task" onclick="location.href='/job/${j.job_id}'">
-      <div class="cover"><img src="/api/jobs/${j.job_id}/cover" onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'▶'}))"></div>
+      <div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.5" stroke-linecap="round"><path d="M3 10v4M7 7v10M11 4v16M15 7v10M19 10v4"/></svg></div>
       <div class="info"><div class="title">${escapeHtml(j.topic || j.job_id)}</div>
-        <div class="meta">${j.minutes} 分钟 · ${j.style} · ${j.created || ""}${j.error ? " · " + escapeHtml(j.error).slice(0, 50) : ""}</div></div>
+        <div class="meta">${j.minutes} 分钟 · ${j.style} · ${jobTime(j)}</div></div>
       <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">查看详情 →</a>
       <span class="badge ${cls}">${label}</span>
       <button class="ghost del" onclick="delJob(event,'${j.job_id}','${escapeHtml(j.topic || "").replace(/'/g, "")}')">删除</button>

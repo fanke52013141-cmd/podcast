@@ -100,7 +100,7 @@ try:
     mp = os.path.join(_tmpdir, "manifest.json")
     _sh.copyfile(os.path.join(BASE, "voice_lib", "manifest.json"), mp)
     newv = vs.create({"name": "测试音色", "gender": "male", "style_tags": ["测试"]}, path=mp)
-    check("新增音色", newv["id"].startswith("v09_") or newv["id"].startswith("v0"), newv["id"])
+    check("新增音色", newv["id"].startswith("v") and "_" in newv["id"], newv["id"])  # id 序号随库动态
     upd = vs.update(newv["id"], {"name": "改名后", "license_status": "public"}, path=mp)
     check("更新音色", upd["name"] == "改名后" and upd["license_status"] == "public")
     vs.delete(newv["id"], path=mp)

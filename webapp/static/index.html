@@ -3,26 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI 播客工坊</title>
-<link rel="stylesheet" href="/static/style.css?v=0.2">
+<title>AI 播客</title>
+<link rel="stylesheet" href="/static/style.css?v=0.7">
+<link rel="stylesheet" href="/static/duo.css?v=0.7">
+<link rel="stylesheet" href="/static/final.css?v=0.7">
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"><span class="wave">▮▮▮</span> AI 播客工坊</div>
+  <div class="logo">AI 播客</div>
   <nav>
     <a class="active" href="/">工作台</a>
-    <a href="/voices?v=0.2">音色库</a>
-    <a href="/">任务中心</a>
-    <a href="/settings?v=0.2">设置</a>
+    <a href="/voices?v=0.7">音色库</a>
+    <a href="/tasks?v=0.7">任务中心</a>
+    <a href="/settings?v=0.7">设置</a>
+    <a href="/logs?v=0.7">日志</a>
   </nav>
-  <div class="user">Studio</div>
 </header>
 
-<main class="grid">
+<main class="grid single">
+
   <!-- 左：创作卡 -->
   <section class="card create">
-    <h2>开始创作</h2>
-    <p class="sub">智能脚本引擎 · 支持文章一键转双人对谈播客</p>
     <div class="tplrow">
       <label class="small">节目模板
         <select id="tplSel"><option value="">无（手动配置）</option></select></label>
@@ -55,18 +56,27 @@
         <select id="partnerVoice"></select>
       </div>
       <div>
-        <div class="field-label">引擎</div>
+        <div class="field-label">写稿引擎</div>
         <select id="provider">
           <option value="mock">Mock（联调）</option>
           <option value="api">DeepSeek API</option>
         </select>
-        <div class="micro">Mock 用于零成本联调；配置 DeepSeek API Key 后切换真实写稿</div>
+      </div>
+      <div>
+        <div class="field-label">合成引擎</div>
+        <select id="ttsEngine">
+          <option value="">默认（SoulX）</option>
+          <option value="soulx">SoulX · 本地</option>
+          <option value="indextts">IndexTTS · 本地</option>
+          <option value="minimax">MiniMax · API</option>
+          <option value="doubao">豆包 · API</option>
+        </select>
       </div>
     </div>
 
     <div class="actions">
-      <span class="hint mono" id="costHint">预计耗时 ~2 分钟 · 成本 ≈¥0.07</span>
-      <button class="primary" id="create">🎙 生成播客 <kbd class="kbd">⌘⏎</kbd></button>
+      <span class="hint mono" id="costHint">预计耗时 ~2 分钟</span>
+      <button class="primary" id="create">生成播客</button>
     </div>
     <div id="createErr" class="err" hidden></div>
 
@@ -82,26 +92,26 @@
     </details>
   </section>
 
-  <!-- 右：统计 -->
-  <aside class="card stats">
-    <h2>本月概览</h2>
-    <div class="stat"><div class="num" id="stJobs">0</div><div class="lbl">生成集数</div></div>
-    <div class="stat"><div class="num mono" id="stDone">0</div><div class="lbl">已完成</div></div>
-    <div class="stat"><div class="num" id="stPass">—</div><div class="lbl">质检通过率</div></div>
-    <div class="stat"><div class="num mono" id="stCost">¥0.00</div><div class="lbl">总成本（估算）</div></div>
-    <div class="week">
+  <!-- 概览：上下结构横排 -->
+  <section class="card overview">
+    <div class="ov-stats">
+      <div class="stat"><div class="num" id="stJobs">0</div><div class="lbl">生成集数</div></div>
+      <div class="stat"><div class="num mono" id="stDone">0</div><div class="lbl">已完成</div></div>
+      <div class="stat"><div class="num mono" id="stRunning">0</div><div class="lbl">进行中</div></div>
+    </div>
+    <div class="ov-week">
       <div class="week-title">本周产出（分钟）</div>
       <div class="bars" id="weekBars"></div>
       <div class="week-days mono"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
     </div>
-    <div class="foot">SoulX-Podcast 本地合成 · DeepSeek 写稿</div>
-  </aside>
+  </section>
+
 
   <!-- 下：任务列表 -->
   <section class="card tasks">
     <div class="tasks-head">
       <h2>最近任务</h2>
-      <span class="mono small" id="autoRefresh"><a href="/tasks?v=0.2" style="color:var(--amber)">全部任务 →</a></span>
+      <span class="mono small" id="autoRefresh"><a href="/tasks?v=0.7" style="color:var(--txt2)">全部任务 →</a></span>
     </div>
     <div id="tasks" class="tasklist"><div class="empty">还没有任务，从上面开始创作吧</div></div>
   </section>
@@ -116,6 +126,6 @@
   <div id="dTurns" class="turns"></div>
 </dialog>
 
-<script src="/static/app.js?v=0.2"></script>
+<script src="/static/app.js?v=0.7"></script>
 </body>
 </html>

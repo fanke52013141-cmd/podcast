@@ -54,6 +54,9 @@ async function loadSettings() {
   $("segVal").textContent = `${s.tts.segment_minutes} 分钟/段`;
   $("sVsUrl").value = s.tts.voicestar_url || "";
   $("sVsCmd").value = s.tts.voicestar_cmd || "";
+  // API 合成引擎（掩码展示，留空=不修改）
+  $("mxState").textContent = s.tts.minimax.key_set ? `已配置 ${s.tts.minimax.key_masked}` : "未配置";
+  $("dbState").textContent = s.tts.doubao.key_set ? `已配置 ${s.tts.doubao.key_masked}` : "未配置";
   $("paraling").innerHTML = Object.entries(s.tts.paraling).map(([k, on]) =>
     `<label class="chip${on ? " on" : ""}"><input type="checkbox" data-p="${k}" ${on ? "checked" : ""}>${PARALING_NAME[k]}</label>`).join("");
   $("paraling").querySelectorAll("input").forEach(c =>
@@ -84,7 +87,7 @@ function bind() {
       body: JSON.stringify({ api_key: $("sKey").value.trim(),
                              model: $("sModel").value.trim() })
     })).json();
-    b.textContent = r.ok ? `连接正常 · ${r.latency_ms}ms` : `❌ ${r.error}`.slice(0, 48);
+    b.textContent = r.ok ? `连接正常 · ${r.latency_ms}ms` : `${r.error}`.slice(0, 48);
     b.className = "badge " + (r.ok ? "done" : "failed");
     if (r.ok) $("keyState").textContent = "Key 有效";
   });
@@ -94,8 +97,28 @@ function bind() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: $("sTtsUrl").value.trim() })
     })).json();
-    b.textContent = r.ok ? r.detail : `❌ ${r.error}`.slice(0, 60);
+    b.textContent = r.ok ? r.detail : `${r.error}`.slice(0, 60);
     b.className = "badge " + (r.ok ? "done" : "failed");
+  });
+  $("btnTestMx").addEventListener("click", async () => {
+    const b = $("mxTest"); b.textContent = "测试中…"; b.className = "badge running";
+    const r = await (await fetch("/api/settings/test-minimax", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: $("sMxKey").value.trim() })
+    })).json();
+    b.textContent = r.ok ? `连接正常 · ${r.latency_ms}ms` : `${r.error}`.slice(0, 48);
+    b.className = "badge " + (r.ok ? "done" : "failed");
+    if (r.ok) $("mxState").textContent = "Key 有效";
+  });
+  $("btnTestDb").addEventListener("click", async () => {
+    const b = $("dbTest"); b.textContent = "测试中…"; b.className = "badge running";
+    const r = await (await fetch("/api/settings/test-doubao", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: $("sDbKey").value.trim() })
+    })).json();
+    b.textContent = r.ok ? `连接正常 · ${r.latency_ms}ms` : `${r.error}`.slice(0, 48);
+    b.className = "badge " + (r.ok ? "done" : "failed");
+    if (r.ok) $("dbState").textContent = "Key 有效";
   });
   $("btnSave").addEventListener("click", save);
   $("btnReset").addEventListener("click", async () => {
@@ -139,13 +162,19 @@ async function save() {
   };
   const key = $("sKey").value.trim();
   if (key && !key.includes("•")) body.DEEPSEEK_API_KEY = key;   // 留空/掩码 = 不修改
+  const mxKey = $("sMxKey").value.trim();
+  if (mxKey && !mxKey.includes("•")) body.MINIMAX_API_KEY = mxKey;
+  const dbKey = $("sDbKey").value.trim();
+  if (dbKey && !dbKey.includes("•")) body.DOUBAO_API_KEY = dbKey;
   const r = await (await fetch("/api/settings", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   })).json();
   toast(`已保存 ${r.saved} 项配置（即时生效）`);
   await loadSettings();                                          // 重新加载掩码
-  $("sKey").value = "";                                          // 清空明文输入
+  $("sKey").value = "";
+  $("sMxKey").value = "";
+  $("sDbKey").value = "";                                          // 清空明文输入
 }
 
 // ---------- 夜间批量队列（P3-5） ----------

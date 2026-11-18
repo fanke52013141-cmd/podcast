@@ -39,7 +39,7 @@ async function load() {
     "引擎状态：" + (job.provider === "mock" ? "Mock 联调" : "DeepSeek API")
     + ` · ${job.minutes} 分钟 · 预计 ${Math.round((job.est_seconds || job.minutes * 60) / 60)} min`
     + cost + toks;
-  if (job.error) { const e = $("valErr"); e.hidden = false; e.textContent = "❌ " + job.error; }
+  if (job.error) { const e = $("valErr"); e.hidden = false; e.textContent = "" + job.error; }
 }
 
 // ---------- 流水线步骤条 ----------
@@ -112,7 +112,7 @@ function renderTurns() {
   $("turns").querySelectorAll(".redo").forEach(b =>
     b.addEventListener("click", () => toast(`第 ${+b.dataset.i + 1} 轮重做将在 P3 质检闭环接入后可用`)));
   // 质检状态
-  if (job.qc) {
+  if (job.qc && $("qcSum")) {
     const q = job.qc;
     $("qcSum").innerHTML = q.mode === "unavailable"
       ? `质检：暂不可用（${escapeHtml(q.note || "") }）`
@@ -230,7 +230,7 @@ function drawWave(ratio) {
   const bw = 6, gap = 3;
   for (let x = 0; x + bw <= W; x += bw + gap) {
     const h = Math.max(8, (0.25 + rnd() * 0.75) * H * 0.9);
-    ctx.fillStyle = (x / W) <= ratio ? "#F59E0B" : "#4B5563";
+    ctx.fillStyle = (x / W) <= ratio ? "#171717" : "#D4D4D4";
     ctx.fillRect(x, mid - h / 2, bw, h);
   }
 }

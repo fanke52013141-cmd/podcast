@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>引擎对比 · AI 播客</title>
+<link rel="stylesheet" href="/static/style.css?v=0.7">
+<link rel="stylesheet" href="/static/duo.css?v=0.7">
+<link rel="stylesheet" href="/static/final.css?v=0.7">
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">AI 播客</div>
+  <nav>
+    <a href="/">工作台</a>
+    <a href="/voices?v=0.7">音色库</a>
+    <a href="/tasks?v=0.7">任务中心</a>
+    <a href="/settings?v=0.7">设置</a>
+    <a href="/logs?v=0.7">日志</a>
+  </nav>
+</header>
+
+<main class="twrap" style="max-width:860px">
+  <div class="thead"><h2>TTS 引擎对比试听</h2>
+    <span class="small">同一版稿子（350 字 · 10 轮 · 双主播）· 均已做响度标准化</span></div>
+
+  <section class="card" style="display:flex;flex-direction:column;gap:10px">
+    <div>
+      <h2 style="font-size:15px">A · IndexTTS 2.5</h2>
+      <p class="small" style="margin:4px 0 8px">走 ComfyUI · 逐轮克隆合成 · 轮级缓存 · 72 秒成品含片头尾</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/it25_voice.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">B · SoulX-Podcast 1.7B（seed 7 · 当前默认引擎）</h2>
+      <p class="small" style="margin:4px 0 8px">WSL 5080 本地推理 · 整段双人对话生成</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/soulx_s7.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">C · SoulX-Podcast 1.7B（seed 42 · 换种子对照）</h2>
+      <p class="small" style="margin:4px 0 8px">同稿不同随机种子，感受稳定性差异</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/soulx_s42.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">附 · IndexTTS 成品（BGM 混音 + 响度标准）</h2>
+      <p class="small" style="margin:4px 0 8px">上传/发布用的最终版效果</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/it25_final_bgm.mp3"></audio>
+    </div>
+  </section>
+
+  <div class="thead" style="margin-top:20px"><h2>AI 设计音色 · 5 条试听</h2>
+    <span class="small">MiniMax voice_design 真跑产出 · 已入库音色库（可直接设为主持/搭档）</span></div>
+  <section class="card" style="display:flex;flex-direction:column;gap:10px" id="designList">
+    <div>
+      <h2 style="font-size:15px">1 · 深夜知性 · 女</h2>
+      <p class="small" style="margin:4px 0 8px">温柔知性年轻女声，语速偏慢，适合深夜电台</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/design_1.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">2 · 阳光快嘴 · 男</h2>
+      <p class="small" style="margin:4px 0 8px">阳光活力男声，语速明快带笑意，适合资讯快节奏</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/design_2.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">3 · 低沉访谈 · 男</h2>
+      <p class="small" style="margin:4px 0 8px">低沉磁性中年男声，沉稳有力，适合商业访谈</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/design_3.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">4 · 漫才吐槽 · 女</h2>
+      <p class="small" style="margin:4px 0 8px">清脆伶俐女声，节奏跳跃带俏皮，漫才吐槽担当</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/design_4.mp3"></audio>
+    </div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <h2 style="font-size:15px">5 · 学者讲述 · 男</h2>
+      <p class="small" style="margin:4px 0 8px">温和儒雅中老年男声，娓娓道来，适合知识科普</p>
+      <audio controls preload="none" style="width:100%" src="/static/compare/design_5.mp3"></audio>
+    </div>
+  </section>
+
+  <p class="small" style="padding:4px 0 24px">两个引擎用的都是 SoulX 官方男女参考样音。听完想换默认引擎或清理备用引擎，告诉我即可。</p>
+</main>
+</body>
+</html>

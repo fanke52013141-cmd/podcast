@@ -3,24 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>任务详情 · AI 播客工坊</title>
-<link rel="stylesheet" href="/static/style.css?v=0.2">
+<title>任务详情 · AI 播客</title>
+<link rel="stylesheet" href="/static/style.css?v=0.7">
+<link rel="stylesheet" href="/static/duo.css?v=0.7">
+<link rel="stylesheet" href="/static/final.css?v=0.7">
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"><span class="wave">▮▮▮</span> AI 播客工坊</div>
+  <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
     <a href="#" data-soon>音色库</a>
-    <a href="/tasks?v=0.2">任务中心</a>
-    <a href="/settings?v=0.2">设置</a>
+    <a href="/tasks?v=0.7">任务中心</a>
+    <a href="/settings?v=0.7">设置</a>
+    <a href="/logs?v=0.7">日志</a>
   </nav>
-  <div class="user">Studio</div>
 </header>
 
 <main class="jobwrap">
   <div class="crumb">
-    <a href="/tasks?v=0.2">任务中心</a> <span class="sep">/</span> <b id="jTopic">加载中…</b>
+    <a href="/tasks?v=0.7">任务中心</a> <span class="sep">/</span> <b id="jTopic">加载中…</b>
     <span class="badge" id="jState">…</span>
     <span class="badge done" id="finalBadge" hidden>成品 MP3</span>
     <div class="crumb-actions">
@@ -44,10 +46,10 @@
   </section>
 
   <!-- 播放器 + 后期开关 -->
-  <section class="card playercard">
+  <section class="card playercard stack">
     <div class="player">
       <div class="sec-head"><h2>播客预览</h2><span class="mono small" id="durationTxt"></span></div>
-      <canvas id="wave" height="88"></canvas>
+      <canvas id="wave" class="empty" height="88"></canvas>
       <div class="pctrl">
         <button class="playbtn" id="playBtn">▶</button>
         <span class="mono" id="timeTxt">00:00 / 00:00</span>
@@ -55,21 +57,21 @@
         <input type="range" id="vol" min="0" max="100" value="90">
       </div>
       <audio id="audio" preload="none"></audio>
-      <div class="nowav small" id="noWav">等待语音合成 —— 5080 机器 TTS 服务就绪后自动出现波形</div>
+      <div class="nowav small" id="noWav">等待语音合成</div>
     </div>
     <div class="switchcard">
       <div class="sec-head"><h2>后期</h2></div>
       <label class="sw"><input type="checkbox" id="swBgm" checked><span>BGM 背景音乐</span><em>音量 0.25 · 自动避让</em></label>
       <label class="sw"><input type="checkbox" id="swSrt" checked><span>字幕</span><em>SRT / VTT 双格式</em></label>
       <label class="sw"><input type="checkbox" id="swWm" checked><span>AI 水印</span><em>AudioSeal 溯源</em></label>
-      <label class="sw lock"><input type="checkbox" id="swLoud" checked disabled><span>响度标准化</span><em>🔒 -16 LUFS · 平台标准</em></label>
+      <label class="sw lock"><input type="checkbox" id="swLoud" checked disabled><span>响度标准化</span><em>-16 LUFS · 平台标准</em></label>
     </div>
   </section>
 
   <!-- 剪辑（UI-6） -->
   <section class="card editcard">
     <div class="sec-head"><h2>剪辑</h2>
-      <span class="small">轮次音量 · 裁剪 · 变速 → 生成 edited.mp3（不覆盖原文件）</span></div>
+      </div>
     <div class="erow">
       <label class="small">裁剪 开始 <input id="trimStart" type="number" step="0.5" min="0" placeholder="0"></label>
       <label class="small">结束 <input id="trimEnd" type="number" step="0.5" min="0" placeholder="结尾"></label>
@@ -86,13 +88,13 @@
         <button class="ghost" id="btnAddGain">加入调整</button></label>
       <span class="small mono" id="gainList"></span>
     </div>
-    <div class="small" style="margin-top:6px">运行日志：<a href="/traces?v=0.2" style="color:var(--amber)">/traces</a></div>
+    <div class="small" style="margin-top:6px">运行日志：<a href="/traces?v=0.7" style="color:var(--amber)">/traces</a></div>
   </section>
 
   <!-- 音效/转场（P2-6） -->
   <section class="card editcard">
     <div class="sec-head"><h2>音效 / 转场</h2>
-      <span class="small">锚定「第几轮 + 句内比例」——重合成/变速后自动重对位</span></div>
+      </div>
     <div class="erow">
       <label class="small">轮次 <select id="sfxTurn"></select></label>
       <label class="small">句内位置
@@ -110,13 +112,13 @@
   <!-- 脚本 -->
   <section class="card">
     <div class="sec-head"><h2>对话脚本 <span class="mono small" id="turnCount"></span></h2>
-      <span class="small" id="qcSum">每轮可单独重做（P3 质检闭环接入）</span>
+      
       <button class="ghost" id="btnRunQc" hidden>运行质检</button>
     </div>
     <div class="turnlist" id="turns"><div class="empty">脚本尚未生成</div></div>
   </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/job.js?v=0.2"></script>
+<script src="/static/job.js?v=0.7"></script>
 </body>
 </html>

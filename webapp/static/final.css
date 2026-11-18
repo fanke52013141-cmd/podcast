@@ -1,0 +1,186 @@
+/* ============================================================================
+   Final 极简高级层 —— 依据 Stitch 复刻稿（Warm-Minimal Editorial Replica）
+   screen: projects/5713960083342176568/screens/321fc51d16e54f7aa73b509b25fa29ec
+   落地要点：
+   1) 严禁左侧描边导航（用户硬性禁令）：侧栏/后期卡全部分隔线化
+   2) 时长滑块：2px 细线轨道 + 14px 墨色圆点滑钮（无填充色）
+   3) 全局无投影、无渐变、无发光；唯一点缀橙 #F67748
+   加载顺序：style.css → duo.css → final.css（最高优先级）
+   ========================================================================== */
+
+/* ---- 1) 左侧描边禁令执行 ---- */
+.setnav a{border-left:none !important;border-radius:8px}
+.setnav a.on{border-left:none !important;font-weight:600}
+.switchcard,.playercard .switchcard{border-left:none !important;padding-left:0}
+
+/* ---- 2) 滑块：圆点墨钮 + 细线轨道（替换方形滑钮） ---- */
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:24px;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:#E6E3DD;border:none;border-radius:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:14px;height:14px;margin-top:-6px;background:#30343A;border:none;
+  border-radius:50%;box-shadow:none;transition:transform 120ms cubic-bezier(.2,.8,.2,1)}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.15)}
+input[type=range]::-moz-range-track{height:2px;background:#E6E3DD;border:none;border-radius:0}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;background:#30343A;
+  border:none;border-radius:50%;box-shadow:none}
+
+/* ---- 3) 时长行强调：数值用衬线加大加粗（参照设计稿"时长 10 分钟"） ---- */
+.field-label b,.field-label .mono{color:#30343A;font-weight:700;font-size:13px}
+
+/* ---- 4) 卡片规格对齐 Stitch 稿 ---- */
+.card{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:16px;box-shadow:none}
+.card h2{font-size:17px;font-weight:700;color:#30343A;letter-spacing:-.01em}
+.topbar{background:#FFFEFA;border-bottom:1px solid #E6E3DD}
+.logo{color:#30343A;font-weight:800;letter-spacing:-.02em}
+.logo .wave{color:#F67748;font-size:14px}
+.topbar nav a{color:#676D76;font-weight:500;padding:6px 2px}
+.topbar nav a.active{color:#30343A;font-weight:600;border-bottom:2px solid #30343A}
+.user{background:#F4F1EC;color:#676D76;border:1px solid #E6E3DD;border-radius:999px;
+  width:auto;min-width:32px;padding:4px 10px;font-size:12px}
+
+/* ---- 5) 按钮规格 ---- */
+button.primary{background:#F67748;color:#fff;border:none;border-radius:10px;
+  padding:10px 24px;font-weight:600;box-shadow:none;
+  transition:background 160ms cubic-bezier(.2,.8,.2,1)}
+button.primary:hover{background:#e06639;transform:none;box-shadow:none;filter:none}
+#create{background:#F67748}
+#create:hover{background:#e06639}
+.vsearch .primary{background:#F67748}
+.vsearch .primary:hover{background:#e06639}
+button.ghost{background:#FFFEFA;border:1px solid #C4C0B8;border-radius:10px;
+  color:#30343A;font-weight:500}
+button.ghost:hover{background:#F5F2EC;border-color:#858078;color:#30343A}
+
+/* ---- 6) 风格九宫格选中 = 墨底白字 ---- */
+.styles button{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:10px;
+  color:#30343A;font-weight:500;transition:border-color 120ms}
+.styles button:hover{border-color:#858078}
+.styles button.on{background:#30343A;border:1px solid #30343A;color:#fff;font-weight:600}
+
+/* ---- 7) 输入类（白底 + 暖灰控制边，聚焦墨色） ---- */
+textarea,.frow input,.frow select,.row select,.vsearch input,.rssrow input,
+.erow input,.erow select,.keyrow input,.pctrl select,.tplrow select,.rssrow select,
+.setnav select,.thead select{background:#fff;border:1px solid #C4C0B8;border-radius:10px;
+  color:#30343A;transition:border-color 120ms}
+textarea:focus,.frow input:focus,.frow select:focus,.row select:focus,
+.vsearch input:focus,.keyrow input:focus,.rssrow input:focus{border-color:#30343A;
+  box-shadow:none;outline:none}
+:focus-visible{outline:2px solid #315BD6;outline-offset:3px;border-radius:4px}
+
+/* ---- 8) 概览大数字 + 周产出 ---- */
+.stats .num{font-size:30px;font-weight:800;color:#30343A;letter-spacing:-.02em}
+.stats .num.mono{color:#30343A}
+.week .bar{background:#E6E3DD;border-radius:2px 2px 0 0}
+.week .bar.today{background:#F67748;box-shadow:none}
+
+/* ---- 9) 徽章药丸 ---- */
+.badge{border-radius:999px;border:none;font-weight:500;padding:3px 11px}
+.badge.done{background:#EAF6EF;color:#276B4C}
+.badge.running{background:#EDF4FF;color:#315F9E}
+.badge.failed{background:#FFF0EF;color:#B23B3B}
+.badge.script{background:#F5F2EC;color:#676D76}
+
+/* ---- 10) 任务行：白卡 + 分隔线 + hover 边框加深 ---- */
+.task{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:12px}
+.task:hover{border-color:#858078;background:#FFFEFA}
+.task .cover{background:#F4F1EC;color:#30343A;border-radius:10px}
+.thead .filters .ghost{border-radius:999px}
+.thead .filters .ghost.on{background:#30343A;border-color:#30343A;color:#fff;font-weight:600}
+
+/* ---- 11) 弹窗/悬浮层（唯一允许软影处） ---- */
+dialog{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:16px;
+  box-shadow:0 16px 48px rgba(48,52,58,.14)}
+.toast{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:12px;
+  box-shadow:0 16px 48px rgba(48,52,58,.14)}
+.actionbar{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:12px;
+  box-shadow:0 16px 48px rgba(48,52,58,.14)}
+
+/* ---- 12) 音色库卡片 ---- */
+.vsearch{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:16px;box-shadow:none}
+.vcard{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:16px}
+.vcard:hover{border-color:#858078;box-shadow:none;transform:none}
+.vtile{background:#F4F1EC;border-radius:12px;box-shadow:inset 0 0 0 1px #E6E3DD}
+.vplay{background:#30343A;border-radius:8px}
+.vplay:hover{background:#1F2224}
+.segb.on{background:#30343A}
+.lic.ok{background:#EAF6EF;color:#276B4C}
+.vtag.warn{background:#FFF5D9;color:#80570C}
+.vbind{background:#F5F2EC}
+.vbind .vdot{background:#F67748}
+
+/* ---- 13) 设置侧栏：无描边导航，浅底圆角选中 ---- */
+.setnav{background:#FFFEFA}
+.setnav a{color:#676D76}
+.setnav a:hover{color:#30343A;background:#F5F2EC}
+.setnav a.on{color:#30343A;background:#F5F2EC;font-weight:600}
+.setnav .navfoot{border-top:1px solid #E6E3DD}
+
+/* ---- 14) 复选框墨色、下拉箭头暖灰 ---- */
+input[type=checkbox]{border-color:#C4C0B8}
+input[type=checkbox]:checked{background:#30343A;border-color:#30343A}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23676D76' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+
+/* ---- 15) 滚动条 ---- */
+*{scrollbar-width:thin;scrollbar-color:#E6E3DD #FBF8F3}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#FBF8F3}
+::-webkit-scrollbar-thumb{background:#E6E3DD;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#C4C0B8}
+
+/* ================= 极简内容轮（用户意见 2026-11-18） =================
+   删多余提示语后的布局修正：概览上下结构 / 任务行对齐 / 播放条重设计 */
+
+/* 1) 工作台单列：概览横排卡（上下结构，替代右侧窄竖卡） */
+.grid.single{grid-template-columns:1fr}
+.grid.single .create{grid-row:auto}
+.overview{display:flex;align-items:stretch;gap:32px;padding:18px 24px}
+.overview .ov-stats{display:flex;gap:0;flex:1;max-width:480px}
+.overview .stat{flex:1;padding:0 20px;border-right:1px solid var(--line)}
+.overview .stat:first-child{padding-left:0}
+.overview .stat:last-child{border-right:none}
+.overview .num{font-size:30px;font-weight:800;color:#30343A;letter-spacing:-.02em;line-height:1.1}
+.overview .lbl{color:#676D76;font-size:12px;margin-top:3px}
+.overview .ov-week{flex:1;border-left:1px solid var(--line);padding-left:28px;
+  display:flex;flex-direction:column;justify-content:center}
+.overview .bars{display:flex;align-items:flex-end;gap:12px;height:44px}
+.overview .bar{min-height:10px;background:#E6E3DD;border-radius:2px 2px 0 0}
+.overview .bar.today{background:#F67748}
+.overview .week-days{display:flex;gap:12px;margin-top:6px}
+.overview .week-days span{flex:1;text-align:center;font-size:10px;color:#858078}
+
+/* 2) 任务行：封面波形图标 + 右列对齐 */
+.task .cover{width:44px;height:44px;border-radius:10px;background:#F4F1EC;
+  display:flex;align-items:center;justify-content:center;color:#30343A}
+.task .cover svg{width:20px;height:20px;opacity:.55}
+.task .detail-link{width:76px;text-align:right;flex:none}
+.task .badge{width:72px;text-align:center;flex:none}
+.task .del{flex:none}
+.qlist .task{cursor:default}
+
+/* 3) 播放器 + 后期：单列同宽（彻底同高） */
+.playercard.stack{display:flex;flex-direction:column;gap:16px}
+.playercard.stack .switchcard{border:none;padding:0;display:grid;
+  grid-template-columns:repeat(4,1fr);gap:10px}
+.playercard.stack .sw{border:1px solid var(--line);border-radius:10px;
+  padding:10px 14px;margin:0;flex-direction:row;align-items:center;gap:8px}
+.playercard.stack .sw span{font-size:13px;font-weight:500}
+.playercard.stack .sw em{display:none}
+.playercard.stack .sw.lock{opacity:.6}
+.playercard.stack .sec-head{grid-column:1/-1;margin-bottom:2px}
+#wave.empty{background:
+  repeating-linear-gradient(90deg,#F0EDE7 0 2px,transparent 2px 14px) center/100% 46% no-repeat,
+  var(--surface2)}
+
+/* 4) 播放条精修 */
+#wave{height:72px;border-radius:10px}
+.pctrl{gap:16px}
+.playbtn{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.pctrl .mono{font-size:13px}
+.pctrl input[type=range]{width:110px}
+
+/* 5) 音色名称单行 */
+.vname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 6) 卡片头精简（副标题删除后间距收紧） */
+.card h2{margin-bottom:2px}
+.create .field-label:first-child{margin-top:4px}

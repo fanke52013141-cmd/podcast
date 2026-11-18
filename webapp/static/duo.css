@@ -1,0 +1,204 @@
+/* ============================================================================
+   DuoCast 风格层 —— 参考 duo-podcast (workspace-ui) 设计令牌 1:1 映射
+   画布 #FBF8F3 · 墨色主按钮 #30343A · 品牌橙 #F67748 点缀 · 蓝聚焦环 #315BD6
+   卡片 16px 圆角 · 全平面（仅弹层用大软影）· Inter / Noto Sans SC
+   加载顺序：必须在 style.css 之后
+   ========================================================================== */
+:root{
+  --bg:#FBF8F3; --card:#FFFEFA; --surface2:#F4F1EC;
+  --line:#E6E3DD; --line2:#858078;
+  --amber:#30343A; --amber-deep:#1F2226;
+  --green:#276B4C; --red:#B23B3B;
+  --txt:#30343A; --txt2:#676D76;
+  --brand:#F67748; --brand-hover:#FA875D;
+  --focus:#315BD6;
+  --ok-bg:#EAF6EF; --info:#315F9E; --info-bg:#EDF4FF;
+  --warn:#80570C; --warn-bg:#FFF5D9; --danger-bg:#FFF0EF;
+  --float-shadow:0 16px 48px rgba(48,52,58,.14);
+}
+body{background:var(--bg);color:var(--txt);
+  font-family:'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif}
+
+/* 焦点环：2px 蓝 outline（参照 .wu :focus-visible） */
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+textarea:focus,.frow input:focus,.frow select:focus,.row select:focus,
+.vsearch input:focus,.keyrow input:focus,.rssrow input:focus,.erow input:focus,
+.erow select:focus,.pctrl select:focus,.tplrow select:focus,.rssrow select:focus,
+.setnav select:focus,.thead select:focus{border-color:var(--focus);box-shadow:none;outline:none}
+
+/* 输入类：白底 + 暖灰控制边（参照 .wu-input：raised 底 + control-border） */
+textarea,.frow input,.frow select,.row select,.vsearch input,.rssrow input,
+.erow input,.erow select,.keyrow input,.pctrl select,.tplrow select,.rssrow select,
+.setnav select,.thead select{background:#FFFFFF;border:1px solid var(--line2);
+  border-radius:8px;color:var(--txt)}
+textarea::placeholder,.vsearch input::placeholder,.rssrow input::placeholder,
+.keyrow input::placeholder{color:var(--txt2);opacity:1}
+.frow input[readonly],.erow input[readonly]{background:var(--surface2)}
+
+/* 标题与文字：墨色 700 */
+.logo,.card h2,.setcard h2,.dlg-head h3,.thead h2,.vhero h1{
+  font-weight:700;letter-spacing:-.01em;color:var(--txt)}
+.card h2{font-size:16px}
+.small{color:var(--txt2)}
+.micro{color:var(--txt2)}
+
+/* 顶栏与导航 */
+.topbar{background:var(--card);border-bottom:1px solid var(--line)}
+.logo{color:var(--txt);font-weight:700}
+.logo .wave{color:var(--brand)}
+.topbar nav a{color:var(--txt2);font-weight:500;border-bottom:2px solid transparent}
+.topbar nav a.active{color:var(--txt);border-bottom:2px solid var(--txt);font-weight:600}
+.topbar nav a:hover{color:var(--txt)}
+.user{background:var(--surface2);color:var(--txt2)}
+
+/* 卡片：暖白表面 + 16px 圆角 + 平面 */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:none}
+
+/* 按钮：主=墨色，主 CTA=品牌橙（参照 .wu-btn / data-variant="brand"） */
+button.primary{background:var(--amber);color:#fff;border:none;border-radius:8px;
+  box-shadow:none;font-weight:600;transition:background 160ms cubic-bezier(.2,.8,.2,1)}
+button.primary:hover{background:var(--amber-deep);filter:none;transform:none;box-shadow:none}
+button.primary:active{box-shadow:inset 0 0 0 2px currentColor}
+button.primary .kbd{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff}
+#create{background:var(--brand);color:var(--txt)}
+#create:hover{background:var(--brand-hover)}
+button.ghost{background:var(--card);border:1px solid var(--line2);border-radius:8px;
+  color:var(--txt);font-weight:500;transition:background 160ms cubic-bezier(.2,.8,.2,1)}
+button.ghost:hover{background:var(--surface2);color:var(--txt);border-color:var(--line2)}
+button.ghost.amber{color:var(--txt);border-color:var(--line2)}
+button.ghost.amber:hover{background:var(--surface2);border-color:var(--line2)}
+.kbd{background:var(--surface2);border:1px solid var(--line);border-radius:4px;color:var(--txt2)}
+
+/* 风格九宫格：选中 = 墨底白字（参照 aria-pressed 实心样式） */
+.styles button{background:var(--card);border:1px solid var(--line);border-radius:8px;
+  color:var(--txt2);font-weight:500}
+.styles button:hover{border-color:var(--line2);color:var(--txt)}
+.styles button.on{background:var(--amber);border:1px solid var(--amber);
+  color:#fff;font-weight:600}
+
+/* 徽章：药丸形 + 软色调（参照 .wu-badge[data-tone]） */
+.badge{border-radius:999px;border:none;font-weight:500;padding:3px 10px}
+.badge.done{background:var(--ok-bg);color:var(--green)}
+.badge.running{background:var(--info-bg);color:var(--info)}
+.badge.failed{background:var(--danger-bg);color:var(--red)}
+.badge.script{background:var(--surface2);color:var(--txt2)}
+.detail-link{color:var(--txt)}
+
+/* 任务行：交互卡片 hover 只换边框色（参照 .wu-card[data-variant=interactive]） */
+.task{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.task:hover{border-color:var(--line2);background:var(--card)}
+.task .cover{background:var(--surface2);color:var(--txt2)}
+.task .cover img{filter:none}
+.qlist .task:hover{border-color:var(--line2);background:var(--card)}
+.task .del{color:var(--red)}
+.thead .filters .ghost{border-radius:999px}
+.thead .filters .ghost.on{color:var(--txt);border-color:var(--line2);background:var(--surface2)}
+
+/* 拖拽区 / RSS */
+.drop{border:1px dashed var(--line2);background:transparent;color:var(--txt2)}
+.drop .link{color:var(--txt);font-weight:500}
+.drop.over{border-color:var(--focus);color:var(--txt);background:var(--surface2)}
+.rssbox summary{color:var(--txt2)}
+.rssbox summary:hover{color:var(--txt)}
+
+/* 步骤条：完成=墨底白点，进行中=墨边 */
+.step .dot{background:var(--card);border:1px solid var(--line);color:var(--txt2)}
+.step.done .dot{background:var(--amber);border:1px solid var(--amber);color:#fff}
+.step.done .line{background:var(--amber)}
+.step.active .dot{border:2px solid var(--amber);color:var(--txt);box-shadow:none}
+.step.active .lbl{color:var(--txt);font-weight:600}
+.step .lbl em{color:var(--txt2)}
+.step.fail .dot{border-color:var(--red);color:var(--red)}
+.synthprog .bar{background:var(--surface2)}
+.synthprog .fill{background:var(--brand)}
+.synthprog .mono{color:var(--txt2)}
+
+/* 播放器 */
+#wave{background:var(--surface2);border:1px solid var(--line)}
+.playbtn{background:var(--amber);color:#fff;border:none;border-radius:8px;box-shadow:none}
+.playbtn:hover{background:var(--amber-deep);transform:none}
+.playbtn:active{box-shadow:inset 0 0 0 2px currentColor;transform:none}
+.pctrl select{background:#fff;border:1px solid var(--line2)}
+.switchcard{border-left:1px solid var(--line)}
+.sw.lock span{color:var(--txt2)}
+
+/* 轮次 */
+.turn,.trow{background:var(--card);border:1px solid var(--line)}
+.turn .who{color:var(--txt)}
+.turn.s2 .who,.trow.s2 .who{color:var(--txt2)}
+.trow.s1 .who{color:var(--txt)}
+.tag{background:var(--surface2);color:var(--txt2);border:none}
+
+/* 弹窗 / toast / 悬浮条：浮层用大软影（参照 .wu-dialog / .wu-toast） */
+dialog{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  color:var(--txt);box-shadow:var(--float-shadow)}
+dialog::backdrop{background:rgba(48,52,58,.4)}
+.toast{background:var(--card);border:1px solid var(--line);color:var(--txt);
+  border-radius:12px;box-shadow:var(--float-shadow)}
+.actionbar{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--float-shadow)}
+
+/* 图表：暖灰条 + 今日品牌橙 */
+.week .bar{background:var(--line);border-radius:2px 2px 0 0}
+.week .bar.today{background:var(--brand);box-shadow:none}
+
+/* 设置页侧栏（参照 .wu-nav-item） */
+.setnav{background:var(--card)}
+.setnav a{border-left:2px solid transparent;border-radius:8px;color:var(--txt2)}
+.setnav a:hover{color:var(--txt);background:var(--surface2)}
+.setnav a.on{color:var(--txt);background:var(--surface2);border-left-color:var(--amber);
+  font-weight:600}
+.setnav .navfoot{border-top:1px solid var(--line)}
+
+/* chips（副语言白名单） */
+.chip{background:var(--card);border:1px solid var(--line);border-radius:8px;color:var(--txt2)}
+.chip.on{border:1.5px solid var(--amber);color:var(--txt);background:var(--card);font-weight:600}
+
+/* 音色库 */
+.vhero h1{color:var(--txt)}
+.vhero .lead{color:var(--txt2)}
+.vhero .lead b{color:var(--txt);font-weight:600}
+.vsearch{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:none}
+.vsearch input{background:transparent;border:none}
+.vsearch .primary{background:var(--brand);color:var(--txt)}
+.vsearch .primary:hover{background:var(--brand-hover)}
+.vcard{background:var(--card);border:1px solid var(--line);border-radius:16px;
+  transition:border-color 160ms cubic-bezier(.2,.8,.2,1)}
+.vcard:hover{transform:none;border-color:var(--line2);box-shadow:none}
+.vtile{background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line);border-radius:12px}
+.vname{color:var(--txt);font-weight:600}
+.vsub{color:var(--txt2)}
+.lic{color:var(--txt2);background:var(--surface2);border-radius:999px;font-weight:500}
+.lic.ok{color:var(--green);background:var(--ok-bg)}
+.vtag{color:var(--txt2);background:var(--surface2);border-radius:999px}
+.vtag.warn{color:var(--warn);background:var(--warn-bg)}
+.vwave{background:var(--surface2);border-radius:8px}
+.vacts{border-top:1px solid var(--line)}
+.vplay{background:var(--amber);color:#fff;border:none;border-radius:8px}
+.vplay:hover{background:var(--amber-deep);transform:none}
+.vedit{color:var(--txt2)}
+.vedit:hover{color:var(--txt)}
+.seg{background:var(--surface2);border-radius:8px}
+.segb{color:var(--txt2);border-radius:6px}
+.segb:hover{color:var(--txt)}
+.segb.on{background:var(--amber);color:#fff;font-weight:600;box-shadow:none}
+.vbind{color:var(--txt2);background:var(--surface2);border-radius:8px}
+.vbind .vdot{background:var(--brand)}
+.vgrid .empty{border:1px dashed var(--line2);border-radius:12px}
+.compliance{color:var(--txt2)}
+
+/* 表单控件平面化重映射（滑块/复选框/下拉箭头 → 墨色系） */
+input[type=range]::-webkit-slider-runnable-track{background:var(--line)}
+input[type=range]::-moz-range-track{background:var(--line)}
+input[type=range]::-webkit-slider-thumb{background:var(--amber)}
+input[type=range]::-moz-range-thumb{background:var(--amber)}
+input[type=checkbox]{border-color:var(--line2);background:#fff}
+input[type=checkbox]:checked{background:var(--amber);border-color:var(--amber)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23676D76' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+
+/* 滚动条（参照全站 8px 暖灰滚动条） */
+*{scrollbar-width:thin;scrollbar-color:var(--line) var(--bg)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--line2)}

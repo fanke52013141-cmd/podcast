@@ -176,16 +176,40 @@ async function createJob() {
       body: JSON.stringify({
         topic, style: curStyle, minutes: +$("minutes").value,
         material, provider: $("provider").value,
-        bgm: curTpl?.bgm || ""
+        bgm: curTpl?.bgm || "",
+        host_voice: $("hostVoice")?.value || "",
+        partner_voice: $("partnerVoice")?.value || "",
+        tts_engine: $("ttsEngine")?.value || ""
       })
     });
     if (!r.ok) throw new Error((await r.json()).detail || r.statusText);
     refreshTasks();
   } catch (e) { err.textContent = "创建失败: " + e.message; err.hidden = false; }
-  finally { btn.disabled = false; btn.textContent = "🎙 生成播客"; }
+  finally { btn.disabled = false; btn.textContent = "生成播客"; }
 }
 
 // ---------- 任务列表 ----------
+function jobTime(j) {                            // 从 job_id 解析创建时间 MM-DD HH:MM
+  try {
+    const p = j.job_id.split("-");               // YYYYMMDD-HHMMSS-xxxx
+    return `${p[0].slice(4,6)}-${p[0].slice(6,8)} ${p[1].slice(0,2)}:${p[1].slice(2,4)}`;
+  } catch { return ""; }
+}
+function taskRow(j, withActions) {
+  const [cls, label] = STATUS_BADGE[j.status] || ["script", j.status];
+  const step = j.status === "running" && j.step ? ` · ${stepLabel(j.step)}` : "";
+  const meta = j.error ? escapeHtml(j.error).slice(0, 50)
+    : `${j.minutes} 分钟 · ${j.style} · ${jobTime(j)}${step}`;
+  return `<div class="task" onclick="location.href='/job/${j.job_id}'">
+    <div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round"><path d="M3 10v4M7 7v10M11 4v16M15 7v10M19 10v4"/></svg></div>
+    <div class="info"><div class="title">${escapeHtml(j.topic)}</div>
+      <div class="meta">${meta}</div></div>
+    ${withActions ? `<span class="badge ${cls}">${label}${j.status === "running" ? " ⟳" : ""}</span>
+      <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">查看详情 →</a>` : ""}
+  </div>`;
+}
+
 const STATUS_BADGE = {
   done: ["done", "已完成"], script_ready: ["script", "脚本就绪"],
   running: ["running", "生成中"], synthesizing: ["running", "合成中"],
@@ -196,25 +220,12 @@ async function refreshTasks() {
   try { jobs = await (await fetch("/api/jobs")).json(); } catch { return; }
   $("stJobs").textContent = jobs.length;
   $("stDone").textContent = jobs.filter(j => j.status === "done" || j.status === "script_ready").length;
-  $("stCost").textContent = "¥" + jobs.reduce((a, j) => a + (j.llm_cost_yuan || 0), 0).toFixed(2);
+  $("stRunning").textContent = jobs.filter(j => ["running", "synthesizing", "queued"].includes(j.status)).length;
   renderWeekBars(jobs);
   const el = $("tasks");
   if (!jobs.length) return;
   jobs = jobs.slice(0, 5);                       // 工作台只显示最近 5 个，全部见任务中心
-  el.innerHTML = jobs.map(j => {
-    const [cls, label] = STATUS_BADGE[j.status] || ["script", j.status];
-    const step = j.status === "running" && j.step ? ` · ${stepLabel(j.step)}` : "";
-    const sub = j.error ? escapeHtml(j.error).slice(0, 60) :
-      `${j.minutes} 分钟 · ${j.style} · 双主播${step}`;
-    return `<div class="task" onclick="location.href='/job/${j.job_id}'">
-      <div class="cover"><img src="/api/jobs/${j.job_id}/cover"
-        onerror="this.replaceWith(Object.assign(document.createElement('div'),{textContent:'▶'}))"></div>
-      <div class="info"><div class="title">${escapeHtml(j.topic)}</div>
-        <div class="meta">${sub}</div></div>
-      <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">查看详情 →</a>
-      <span class="badge ${cls}">${label}${j.status === "running" ? " ⟳" : ""}</span>
-    </div>`;
-  }).join("").slice(0, 1e9);
+  el.innerHTML = jobs.map(j => taskRow(j, false)).join("");
 }
 function stepLabel(s) {
   return { research: "抽取素材", draft: "戏剧化改写", rewrite: "口语化", validate: "校验", synthesize: "语音合成" }[s] || s;
@@ -237,7 +248,7 @@ function renderWeekBars(jobs) {
   if (!bars.some(v => v > 0)) bars[today] = 0;           // 全 0 也渲染坐标
   const max = Math.max(...bars, 10);
   $("weekBars").innerHTML = bars.map((v, i) =>
-    `<div class="bar${i === today ? " today" : ""}" style="height:${Math.max(6, v / max * 46)}px"
+    `<div class="bar${i === today ? " today" : ""}" style="height:${Math.max(10, v / max * 46)}px"
           title="周${"一二三四五六日"[i]} · ${v} 分钟"></div>`).join("");
 }
 
@@ -247,7 +258,7 @@ async function showDetail(id) {
   $("dTitle").textContent = j.topic || id;
   $("dMeta").textContent =
     `状态 ${j.status} · ${j.minutes} 分钟 · ${j.style} · 预计 ${Math.round((j.est_seconds || j.minutes * 60) / 60)} min` +
-    (j.error ? ` · ❌ ${j.error}` : "");
+    (j.error ? ` · ${j.error}` : "");
   const turns = j.script?.text || [];
   const names = Object.fromEntries((j.script?.speakers || []).map(s => [s.id, s.id]));
   $("dTurns").innerHTML = turns.length ? turns.map(([sid, txt], i) =>

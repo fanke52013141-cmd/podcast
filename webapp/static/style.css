@@ -1,20 +1,18 @@
-/* Kosmik 暖阳工作室主题（参考 kosmik.app；布局与功能与 Stitch 设计稿一致） */
+/* Mono Studio 极简黑白灰主题（依据 Stitch Monochrome Studio 设计系统，2026-11-17）
+   变量名沿用旧语义位（amber=主色强调，现值为纯黑），JS 引用无需改动 */
 :root{
-  --bg:#FAF3E6; --card:#FFFDF6; --surface2:#FFF8EA;
-  --line:#E6DCBE; --line2:#D9CBA4;
-  --amber:#EE8A31; --amber-deep:#B45309;
-  --green:#0F9D6B; --red:#D9534F;
-  --txt:#2B251C; --txt2:#8A7F6A; --mono:'JetBrains Mono',Consolas,monospace;
+  --bg:#FAFAFA; --card:#FFFFFF; --surface2:#F5F5F5;
+  --line:#E5E5E5; --line2:#D4D4D4;
+  --amber:#171717; --amber-deep:#171717;
+  --green:#171717; --red:#BA1A1A;
+  --txt:#171717; --txt2:#737373; --mono:'JetBrains Mono',Consolas,monospace;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
-  background:
-    radial-gradient(1100px 700px at 88% -8%, #FDF7EA 0%, transparent 58%),
-    radial-gradient(900px 650px at -8% 108%, #F6EDD8 0%, transparent 55%),
-    var(--bg);
+  background:var(--bg);
   color:var(--txt);
-  font-family:'Hanken Grotesk','PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
+  font-family:'Geist','Inter','PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
 .mono{font-family:var(--mono)}
 .small{font-size:12px;color:var(--txt2)}
 
@@ -445,3 +443,193 @@ dialog::backdrop{background:rgba(43,37,28,.35)}
 .vgrid .empty{border:1.5px dashed var(--line2);border-radius:14px;padding:40px 0;
   color:var(--txt2);text-align:center}
 .compliance{margin-top:6px}
+
+/* ================= Mono 重构层（黑白灰极简，覆盖上方 Kosmik 层） =================
+   依据 Stitch Monochrome Studio 设计系统：唯一强调=黑，灰阶分层，无彩色/渐变/发光 */
+
+/* 排版：600 字重标题，靠字重与灰度分层 */
+.logo,.card h2,.setcard h2,.dlg-head h3,.thead h2,.vhero h1{font-weight:600;letter-spacing:-.01em;color:#171717}
+
+/* 顶栏与导航：白底 + 纯文字导航 */
+.topbar{background:#FFFFFF;border-bottom:1px solid var(--line)}
+.logo .wave{color:#171717;letter-spacing:-2px}
+.topbar nav a{color:var(--txt2);font-weight:500}
+.topbar nav a.active{color:#171717;border-bottom:2px solid #171717}
+.topbar nav a:hover{color:#171717}
+.user{background:var(--surface2);color:var(--txt2)}
+
+/* 卡片：白底 1px 灰边 8px 圆角，零投影 */
+.card{border:1px solid var(--line);border-radius:8px;box-shadow:none}
+
+/* 按钮 */
+button.primary{background:#171717;color:#fff;border:none;border-radius:8px;
+  box-shadow:none;font-weight:600}
+button.primary:hover{filter:none;transform:none;box-shadow:none;background:#000}
+button.primary:active{transform:none;box-shadow:none}
+button.primary .kbd{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4);color:#fff}
+button.ghost{background:#fff;border:1px solid var(--line2);border-radius:8px;color:var(--txt2)}
+button.ghost:hover{color:#171717;border-color:#171717;background:transparent}
+button.ghost.amber{color:#171717;border-color:var(--line2)}
+button.ghost.amber:hover{border-color:#171717;background:var(--surface2)}
+.ghost.amber:disabled{opacity:.55}
+
+/* 输入类：#F5F5F5 底，聚焦黑边，无光晕 */
+textarea,.frow input,.frow select,.row select,.vsearch input,.rssrow input,
+.erow input,.erow select,.keyrow input,.pctrl select,.tplrow select,.rssrow select,
+.setnav select{background:var(--surface2);border:1px solid var(--line);border-radius:8px;color:var(--txt)}
+textarea:focus,.frow input:focus,.frow select:focus,.vsearch input:focus,
+.keyrow input:focus,.rssrow input:focus,.row select:focus{border-color:#171717;box-shadow:none;outline:none}
+.frow input[readonly]{color:var(--txt2)}
+input[type=range]{accent-color:#171717}
+
+/* 风格九宫格：选中 = 白底黑边黑字 */
+.styles button{background:#fff;border:1px solid var(--line);border-radius:8px;color:var(--txt2);font-weight:500}
+.styles button:hover{border-color:var(--line2);color:#171717}
+.styles button.on{background:#fff;border:1.5px solid #171717;color:#171717;font-weight:600}
+
+/* 副语言标签 / chips */
+.tag,.chip.on{background:var(--surface2);color:#525252;border:1px solid transparent}
+.chip{background:#fff;border:1px solid var(--line);border-radius:8px;color:var(--txt2)}
+.chip.on{border:1.5px solid #171717;color:#171717}
+.chip input{accent-color:#171717}
+
+/* 徽章：统一浅灰底深灰字，状态用文字表达 */
+.badge{border:none;font-weight:500}
+.badge.done,.badge.running,.badge.failed,.badge.script{
+  background:var(--surface2);color:#525252;border:1px solid transparent}
+.detail-link{color:#171717}
+.task .detail-link:hover{color:#171717;text-decoration:underline}
+
+/* 任务行 / 封面（封面统一灰度） */
+.task{background:#fff;border:1px solid var(--line);border-radius:8px}
+.task:hover{border-color:var(--line2);background:var(--surface2)}
+.task .cover{background:var(--surface2);color:#171717}
+.task .cover img{filter:grayscale(1)}
+.qlist .task:hover{background:#fff;border-color:var(--line2)}
+
+/* 步骤条：完成=黑底白点，进行中=黑边，无光晕 */
+.step .dot{background:#fff;border:1px solid var(--line);color:var(--txt2)}
+.step.done .dot{background:#171717;border:1px solid #171717;color:#fff}
+.step.done .line{background:#171717}
+.step.active .dot{border:1.5px solid #171717;color:#171717;box-shadow:none}
+.step.active .lbl{color:#171717;font-weight:600}
+.step.fail .dot{border-color:#171717;color:#171717}
+.synthprog .fill{background:#171717;border-radius:3px;transition:width .6s}
+.synthprog .mono{color:#171717}
+
+/* 播放器 */
+#wave{background:var(--surface2);border:1px solid var(--line)}
+.playbtn{background:#171717;color:#fff;border:none;border-radius:8px;box-shadow:none}
+.playbtn:hover{transform:none}
+.playbtn:active{transform:none;box-shadow:none}
+.pctrl select,.pctrl input[type=range]{accent-color:#171717}
+.switchcard{border-left:1px solid var(--line)}
+.sw input{accent-color:#171717}
+.sw.lock span{color:var(--txt2)}
+
+/* 轮次 */
+.turn .who{color:#171717}
+.turn.s2 .who{color:var(--txt2)}
+.trow.s1 .who{color:#171717}
+.trow.s2 .who{color:var(--txt2)}
+.trow{background:#fff}
+
+/* 弹窗 / toast / 悬浮条 */
+dialog{background:#fff;border:1px solid #171717;border-radius:8px;color:var(--txt)}
+dialog::backdrop{background:rgba(23,23,23,.4)}
+.toast{background:#fff;border:1px solid var(--line);color:#171717;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);border-radius:8px}
+.actionbar{background:#fff;border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* 周产出条形图：灰条 + 今日黑条 */
+.week .bar{background:#D4D4D4;border-radius:2px 2px 0 0;opacity:1;min-height:4px}
+.week .bar.today{background:#171717;box-shadow:none}
+
+/* 夜间队列 hover */
+.qlist .task:hover{border-color:var(--line2)}
+
+/* 拖拽区 */
+.drop{border:1px dashed var(--line2);background:transparent}
+.drop .link{color:#171717}
+.drop.over{border-color:#171717;color:#171717;background:var(--surface2)}
+.rssbox summary:hover{color:#171717}
+
+/* 设置页侧栏 */
+.setnav a{border-left:2px solid transparent}
+.setnav a:hover{color:#171717;background:var(--surface2)}
+.setnav a.on{color:#171717;background:var(--surface2);border-left-color:#171717}
+.setnav .navfoot{border-top:1px solid var(--line)}
+.kbd{font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--line2);
+  border-radius:4px;padding:1px 5px;margin-left:8px;vertical-align:1px;color:var(--txt2)}
+
+/* 音色库：hero / 搜索条 / 卡片全部去彩 */
+.vhero .lead b{color:#171717}
+.vsearch{border:1px solid var(--line);box-shadow:none;border-radius:8px}
+.vsearch .ghost{border-radius:8px}
+.vsearch .primary{border-radius:8px;padding:9px 18px}
+.vgrid{gap:14px}
+.vcard{background:#fff;border:1px solid var(--line);border-radius:8px;
+  transition:border-color .15s}
+.vcard:hover{transform:none;border-color:#171717;box-shadow:none}
+.vtile{background:#F0F0F0;box-shadow:inset 0 0 0 1px var(--line);border-radius:8px}
+.vname{color:#171717;font-weight:600}
+.vsub{color:var(--txt2)}
+.lic{color:var(--txt2);background:var(--surface2);border-radius:6px;font-weight:500}
+.lic.ok{color:#171717;background:var(--surface2)}
+.vtag{color:#525252;background:var(--surface2);border-radius:6px}
+.vtag.warn{color:#171717;background:var(--surface2)}
+.vwave{background:var(--surface2);border-radius:6px}
+.vacts{border-top:1px solid var(--line)}
+.vplay{background:#171717;color:#fff;border:none;border-radius:8px;
+  transition:none}
+.vplay:hover{transform:none;background:#000}
+.vedit{color:var(--txt2)}
+.vedit:hover{color:#171717;text-decoration:underline}
+.seg{background:var(--surface2);border-radius:8px}
+.segb{color:var(--txt2);border-radius:6px}
+.segb:hover{color:#171717}
+.segb.on{background:#171717;color:#fff;font-weight:600;box-shadow:none}
+.vbind{color:#525252;background:var(--surface2);border-radius:6px}
+.vbind .vdot{background:#171717}
+.vgrid .empty{border:1px dashed var(--line2);border-radius:8px}
+.compliance{color:var(--txt2)}
+
+/* 编辑弹窗 */
+#editDlg .actionbar{position:static}
+
+/* 声纹瓷砖 canvas 约束在瓷砖内 */
+.vtile canvas{width:44px;height:36px}
+
+/* ================= 平面化修正（用户要求：纯平面，禁止立体/阴影/原生3D质感） ================= */
+
+/* 1) 全局清阴影：任何组件一律无投影 */
+.card,.task,button,dialog,.toast,.actionbar,.vsearch,.vcard,.badge,.chip,.kbd,
+.step .dot,.playbtn,.vplay,.seg,.vtile,.lic,.vtag,.turn,.trow{box-shadow:none}
+
+/* 2) 滑块平面化：2px 平轨道 + 方形黑滑块（替换原生 glossy 3D 滑块） */
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;
+  height:22px;cursor:pointer;accent-color:initial}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:#E5E5E5;
+  border:none;border-radius:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:12px;height:12px;margin-top:-5px;background:#171717;border:none;
+  border-radius:2px;box-shadow:none}
+input[type=range]::-moz-range-track{height:2px;background:#E5E5E5;border:none;border-radius:0}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;background:#171717;
+  border:none;border-radius:2px;box-shadow:none}
+
+/* 3) 下拉框平面化：去掉原生系统边框，换成自定义平面箭头 */
+select{-webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23737373' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+
+/* 4) 复选框平面化：方框 + 黑底白勾（替换原生 3D 复选框） */
+input[type=checkbox]{-webkit-appearance:none;appearance:none;width:15px;height:15px;
+  min-width:15px;border:1.5px solid #D4D4D4;border-radius:3px;background:#fff;
+  cursor:pointer;vertical-align:-2px;position:relative;box-shadow:none;margin-right:8px}
+input[type=checkbox]:checked{background:#171717;border-color:#171717}
+input[type=checkbox]:checked::after{content:"";position:absolute;left:3.5px;top:.5px;
+  width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.sw input{margin-right:8px}
+

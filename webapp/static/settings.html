@@ -3,19 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>设置 · AI 播客工坊</title>
-<link rel="stylesheet" href="/static/style.css?v=0.2">
+<title>设置 · AI 播客</title>
+<link rel="stylesheet" href="/static/style.css?v=0.7">
+<link rel="stylesheet" href="/static/duo.css?v=0.7">
+<link rel="stylesheet" href="/static/final.css?v=0.7">
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"><span class="wave">▮▮▮</span> AI 播客工坊</div>
+  <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
     <a href="#" data-soon>音色库</a>
-    <a href="/tasks?v=0.2">任务中心</a>
-    <a class="active" href="/settings?v=0.2">设置</a>
+    <a href="/tasks?v=0.7">任务中心</a>
+    <a href="/settings?v=0.7">设置</a>
+    <a class="active" href="/logs?v=0.7">日志</a>
   </nav>
-  <div class="user">Studio</div>
 </header>
 
 <main class="setwrap">
@@ -25,14 +27,12 @@
     <a href="#secDefaults">任务默认值</a>
     <a href="#secData">数据与目录</a>
     <a href="#secQueue">夜间队列</a>
-    <div class="navfoot small">配置保存在本地 .env<br>不会上传任何服务器</div>
   </aside>
 
   <div class="setmain">
     <!-- ① 写稿引擎 -->
     <section class="card setcard" id="secLlm">
       <h2>写稿引擎</h2>
-      <p class="sub">配置播客脚本改写大语言模型（DeepSeek 主 / GLM 备）</p>
       <div class="frow">
         <div><div class="field-label">提供商</div>
           <select id="sProvider"><option>DeepSeek（主）</option><option>GLM（备用）</option></select></div>
@@ -51,13 +51,11 @@
         <div class="grow"><div class="field-label">创意温度 <b id="tempVal" class="mono">0.9</b></div>
           <input type="range" id="sTemp" min="2" max="12" value="9"></div>
       </div>
-      <div class="micro">🔒 Key 保存在本地 .env，严格本地优先，不会上传第三方云端</div>
     </section>
 
     <!-- ② 语音合成 -->
     <section class="card setcard" id="secTts">
       <h2>语音合成</h2>
-      <p class="sub">SoulX-Podcast 本地推理服务（部署在 5080 机器）</p>
       <div class="frow">
         <div class="grow"><div class="field-label">TTS 服务地址</div>
           <div class="keyrow">
@@ -81,13 +79,29 @@
         <div class="grow"><div class="field-label">VoiceStar 命令模板（与地址二选一）</div>
           <input id="sVsCmd" class="mono" placeholder="python /path/VoiceStar/inference.py --text &quot;{text}&quot; --target_duration {duration} --ref_audio &quot;{ref}&quot; --output &quot;{out}&quot;"></div>
       </div>
-      <div class="micro">VoiceStar（840M）用于片头/广告位等「精确时长」片段；权重需另行下载，未配置不影响主链路</div>
+
+      <div class="field-label" style="margin-top:18px">API 合成引擎（可选，与本地引擎并存）</div>
+      <div class="frow">
+        <div><div class="field-label">MiniMax API Key</div>
+          <div class="keyrow">
+            <input type="password" id="sMxKey" placeholder="eyJ..." autocomplete="off">
+            <button class="ghost amber" id="btnTestMx">测试连接</button>
+          </div>
+          <div class="keymeta"><span id="mxState" class="small"></span><span id="mxTest" class="badge"></span></div>
+        </div>
+        <div><div class="field-label">豆包（火山）API Key</div>
+          <div class="keyrow">
+            <input type="password" id="sDbKey" placeholder="火山控制台 API Key" autocomplete="off">
+            <button class="ghost amber" id="btnTestDb">测试连接</button>
+          </div>
+          <div class="keymeta"><span id="dbState" class="small"></span><span id="dbTest" class="badge"></span></div>
+        </div>
+      </div>
     </section>
 
     <!-- ③ 任务默认值 -->
     <section class="card setcard" id="secDefaults">
       <h2>任务默认值</h2>
-      <p class="sub">新建创作工程时的预设模板</p>
       <div class="frow">
         <div><div class="field-label">默认风格</div>
           <select id="sStyle"></select></div>
@@ -103,7 +117,6 @@
     <!-- ④ 数据与目录 -->
     <section class="card setcard" id="secData">
       <h2>数据与目录</h2>
-      <p class="sub">本地任务产物与系统诊断</p>
       <div class="frow">
         <div class="grow"><div class="field-label">jobs 目录</div>
           <input class="mono" id="sJobsDir" readonly></div>
@@ -112,14 +125,12 @@
       </div>
       <div class="frow">
         <button class="ghost" id="btnDiag">一键生成诊断包</button>
-        <span class="small">自动打包任务日志与报错栈（脱敏）——P2-11 接入</span>
       </div>
     </section>
 
     <!-- ⑤ 夜间批量队列（P3-5） -->
     <section class="card setcard" id="secQueue">
       <h2>夜间批量队列</h2>
-      <p class="sub">每天到点按主题列表批量创建任务（服务进程常驻时生效）</p>
       <div class="frow">
         <div><div class="field-label">执行时间</div><input id="qTime" type="time" value="02:00"></div>
         <div><div class="field-label">节目模板</div><select id="qTpl"></select></div>
@@ -130,13 +141,11 @@
       <textarea id="qTopics" rows="3" placeholder="AI 编程助手的下一站&#10;本地大模型的消费级落地&#10;播客行业的 AI 变量"></textarea>
       <div class="frow" style="margin-top:10px">
         <button class="ghost amber" id="btnAddSchedule">添加到夜间队列</button>
-        <span class="small">到点自动按主题各生成一集；支持下方“立即执行”手动触发</span>
       </div>
       <div id="qList" class="qlist" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
     </section>
 
     <div class="actionbar">
-      <span class="small">更改保存后即时生效 · 无需重启</span>
       <div>
         <button class="ghost" id="btnReset">重置为默认</button>
         <button class="primary" id="btnSave">保存设置</button>
@@ -145,6 +154,6 @@
   </div>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/settings.js?v=0.2"></script>
+<script src="/static/settings.js?v=0.7"></script>
 </body>
 </html>
