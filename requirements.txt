@@ -18,3 +18,6 @@ av>=14.0                # faster-whisper 解码用；与 fw 1.2.1 兼容需 >=14
 # 后期（P2 可选）
 # audioseal>=0.1
 # funasr>=1.1
+
+# 写稿 Deep Agent（langchain deepagents）
+deepagents>=0.7

@@ -4,19 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.7">
-<link rel="stylesheet" href="/static/duo.css?v=0.7">
-<link rel="stylesheet" href="/static/final.css?v=0.7">
+<link rel="stylesheet" href="/static/style.css?v=0.10">
+<link rel="stylesheet" href="/static/duo.css?v=0.10">
+<link rel="stylesheet" href="/static/final.css?v=0.10">
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a class="active" href="/">工作台</a>
-    <a href="/voices?v=0.7">音色库</a>
-    <a href="/tasks?v=0.7">任务中心</a>
-    <a href="/settings?v=0.7">设置</a>
-    <a href="/logs?v=0.7">日志</a>
+    <a href="/voices?v=0.10">音色库</a>
+    <a href="/tasks?v=0.10">任务中心</a>
+    <a href="/settings?v=0.10">设置</a>
+    <a href="/logs?v=0.10">日志</a>
   </nav>
 </header>
 
@@ -59,7 +59,8 @@
         <div class="field-label">写稿引擎</div>
         <select id="provider">
           <option value="mock">Mock（联调）</option>
-          <option value="api">DeepSeek API</option>
+          <option value="api">API 流水线</option>
+          <option value="agent">Agent（自主写稿）</option>
         </select>
       </div>
       <div>
@@ -111,7 +112,7 @@
   <section class="card tasks">
     <div class="tasks-head">
       <h2>最近任务</h2>
-      <span class="mono small" id="autoRefresh"><a href="/tasks?v=0.7" style="color:var(--txt2)">全部任务 →</a></span>
+      <span class="mono small" id="autoRefresh"><a href="/tasks?v=0.10" style="color:var(--txt2)">全部任务 →</a></span>
     </div>
     <div id="tasks" class="tasklist"><div class="empty">还没有任务，从上面开始创作吧</div></div>
   </section>
@@ -127,6 +128,6 @@
 </dialog>
 
 <div id="taskToast" class="toast" hidden></div>
-<script src="/static/app.js?v=0.7"></script>
+<script src="/static/app.js?v=0.10"></script>
 </body>
 </html>

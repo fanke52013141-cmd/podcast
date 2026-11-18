@@ -124,19 +124,36 @@ def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
         st = PipelineState(topic=topic, style=style, minutes=minutes,
                            material=material, job=job, provider=provider,
                            voice_map=voice_map, tts_url=tts_url)
-        t0 = time.time(); st = research_node(st)
-        trace(job_id, "step_ms", step="research", ms=int((time.time() - t0) * 1000))
-        _set(job_id, step="draft")
-        t0 = time.time(); st = draft_node(st)
-        trace(job_id, "step_ms", step="draft", ms=int((time.time() - t0) * 1000))
-        for attempt in range(3):
-            _set(job_id, step="rewrite", retry=attempt + 1)
-            t0 = time.time(); st = rewrite_node(st)
-            trace(job_id, "step_ms", step=f"rewrite#{attempt + 1}", ms=int((time.time() - t0) * 1000))
-            _set(job_id, step="validate")
-            st = validate_node(st)
-            if not st.errors:
-                break
+        if provider == "agent":
+            # Deep Agent 写稿：自主规划+工具循环（体检/校验/术语内置），一次交付
+            _set(job_id, step="draft")
+            from orchestrator.writing_agent import run_writing_agent
+            t0 = time.time()
+            res = run_writing_agent(topic, minutes=minutes,
+                                    material=st.material, style=style)
+            trace(job_id, "step_ms", step="agent_write",
+                  ms=int((time.time() - t0) * 1000),
+                  lint_score=res["lint"].get("score"),
+                  tokens_out=res["tokens_out"])
+            st.turns = res["turns"]
+            st.humanize = res["lint"]
+            job.llm_tokens_in += res["tokens_in"]
+            job.llm_tokens_out += res["tokens_out"]
+        else:
+            _set(job_id, step="research")
+            t0 = time.time(); st = research_node(st)
+            trace(job_id, "step_ms", step="research", ms=int((time.time() - t0) * 1000))
+            _set(job_id, step="draft")
+            t0 = time.time(); st = draft_node(st)
+            trace(job_id, "step_ms", step="draft", ms=int((time.time() - t0) * 1000))
+            for attempt in range(3):
+                _set(job_id, step="rewrite", retry=attempt + 1)
+                t0 = time.time(); st = rewrite_node(st)
+                trace(job_id, "step_ms", step=f"rewrite#{attempt + 1}", ms=int((time.time() - t0) * 1000))
+                _set(job_id, step="validate")
+                st = validate_node(st)
+                if not st.errors:
+                    break
         if st.errors:
             _set(job_id, status="failed",
                  error=f"3 次回炉仍未通过校验: {st.errors[:3]}")
