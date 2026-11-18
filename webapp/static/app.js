@@ -84,6 +84,7 @@ function renderTplOptions() {
     templates.map(t => `<option value="${t.id}">${t.name}</option>`).join("");
   $("tplSel").value = curTpl?.id || "";
   $("btnDelTpl").hidden = !curTpl;
+  window.fancySync && window.fancySync();
 }
 
 // ---------- RSS 批量（P1-14） ----------
@@ -140,6 +141,7 @@ function renderStyles() {
 function fillVoices(sel, gender) {
   sel.innerHTML = voices.filter(v => v.gender === gender)
     .map(v => `<option value="${v.id}">${v.name} · ${v.style_tags[0] || ""}</option>`).join("");
+  window.fancySync && window.fancySync();          // 自定义下拉同步触发文本
 }
 
 // ---------- 素材拖拽 ----------
