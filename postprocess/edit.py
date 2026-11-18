@@ -5,6 +5,7 @@
 concat 后再做全局 trim + atempo。产物 edited.mp3 不覆盖原文件。
 """
 from __future__ import annotations
+import os
 import subprocess
 from pathlib import Path
 
@@ -38,8 +39,11 @@ def edit(script_dict: dict, wav: str, out_path: str | Path,
     parts = []
     for i in range(len(turns)):
         g = float(gains.get(i, 0.0))
-        parts.append(f"[0:a]atrim={bounds[i]:.3f}:{bounds[i+1]:.3f},"
-                     f"volume={g}dB,asetpts=PTS-STARTPTS[a{i}]")
+        # 0dB 恒等时省略 volume 滤镜：libmp3lame 3.100 对滤镜链输出存在
+        # psymodel 断言崩溃（thr[b] >= 0），能少一个滤镜就少一个
+        vol = f",volume={g:.1f}dB" if abs(g) > 1e-3 else ""
+        parts.append(f"[0:a]atrim={bounds[i]:.3f}:{bounds[i+1]:.3f}"
+                     f"{vol},asetpts=PTS-STARTPTS[a{i}]")
     concat = "".join(f"[a{i}]" for i in range(len(turns))) + \
         f"concat=n={len(turns)}:v=0:a=1[cat]"
     chain = []
@@ -51,11 +55,19 @@ def edit(script_dict: dict, wav: str, out_path: str | Path,
         chain.append(f"atrim={ts:.3f}:{te:.3f},asetpts=PTS-STARTPTS")
     tail = "[cat]" + (",".join(chain) if chain else "anull") + "[out]"
 
-    cmd = [_ffmpeg_exe(), "-y", "-i", wav,
+    # LAME 3.100 断言防护：IndexTTS 原始 wav 直接编码会触发 psymodel 断言
+    # （thr[b] >= 0）。先落盘标准化 PCM，再在其上做剪辑与 mp3 编码。
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as _nf:
+        mid = _nf.name
+    subprocess.run([_ffmpeg_exe(), "-y", "-i", wav, "-af", "aresample=44100",
+                    "-c:a", "pcm_s16le", mid], check=True, capture_output=True)
+    cmd = [_ffmpeg_exe(), "-y", "-i", mid,
            "-filter_complex", ";".join(parts + [concat, tail]),
            "-map", "[out]", "-ar", "48000", "-ac", "2", "-b:a", "320k", str(out_path)]
     try:
         subprocess.run(cmd, check=True, capture_output=True)
+        os.unlink(mid)
     except subprocess.CalledProcessError as e:
         err = e.stderr.decode(errors="ignore")
         tail = "\n".join(err.strip().splitlines()[-4:])
