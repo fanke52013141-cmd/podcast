@@ -47,14 +47,17 @@ TAG_LIMIT = "TAGS"
 def mock_draft(material: str, minutes: int, style: str) -> str:
     """Step A 产物：对话蓝本（[主持]/[搭档] 行式）。按字数预算累积到目标长度。"""
     topic = _topic_of(material)
-    target = minutes * 270                      # 4.5字/秒 × 60秒，正中校验区间
+    target = minutes * 255                      # 4.25字/秒，校验区间正中
+    body = lambda l: len(l.split("] ", 1)[-1])  # 只计正文（校验不含 [主持] 前缀）
     lines = [f"[主持] {_pick(_S1_OPEN).format(t=topic)}"]
-    n = 0
-    while n < target:
+    n = body(lines[0])
+    while n < target * 0.92:
         l1 = f"[主持] {_pick(_S1_MID).format(t=topic)}"
         l2 = f"[搭档] {_pick(_S2_MID)}"
+        if n + body(l1) + body(l2) > target * 1.05:  # 单对超上限就不再加
+            break
         lines += [l1, l2]
-        n += len(l1) + len(l2)
+        n += body(l1) + body(l2)
     lines.append(f"[主持] {_pick(_S1_CLOSE).format(t=topic)}")
     lines.append(f"[搭档] {_pick(_S2_CLOSE)}")
     return "\n".join(lines)

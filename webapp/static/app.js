@@ -18,8 +18,12 @@ async function init() {
     if (STYLES.includes(s.defaults.style)) { curStyle = s.defaults.style; renderStyles(); }
     $("minutes").value = s.defaults.minutes;
     $("minutesVal").textContent = s.defaults.minutes + " 分钟";
-    $("hostVoice").value = s.defaults.host_voice;
-    $("partnerVoice").value = s.defaults.partner_voice;
+    // 默认音色在下拉中不存在时自动回落第一项（防止下拉空白）
+    for (const [sel, want] of [[$("hostVoice"), s.defaults.host_voice],
+                               [$("partnerVoice"), s.defaults.partner_voice]]) {
+      if ([...sel.options].some(o => o.value === want)) sel.value = want;
+      else if (sel.options.length) sel.selectedIndex = 0;
+    }
   } catch {}
   $("minutes").addEventListener("input", e => $("minutesVal").textContent = e.target.value + " 分钟");
   setupDrop();

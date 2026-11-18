@@ -15,8 +15,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 
 from core import logging_setup as logsys
+from core.logging_setup import read_env_file
 
 tlog = logsys.setup("tts")
+
+# 启动时注入 .env（MiniMax/豆包 Key、账号池等；不依赖 source .env）
+for _k, _v in read_env_file().items():
+    if _v and not os.environ.get(_k):
+        os.environ[_k] = _v
 
 
 def tlog_event(event, **ctx):

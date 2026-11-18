@@ -172,3 +172,18 @@ def read_jsonl(path: Path, *, limit: int = 500, level: str = "", q: str = "",
         if len(out) >= limit:
             break
     return out
+
+
+def read_env_file(path: Path | None = None) -> dict[str, str]:
+    """读取 .env（兼容 CRLF）；供各服务启动时注入 os.environ。"""
+    p = path or (BASE_DIR / ".env")
+    data: dict[str, str] = {}
+    if not p.exists():
+        return data
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip().rstrip("\r")
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        data[k.strip()] = v.strip().strip('"')
+    return data

@@ -154,10 +154,11 @@ def save_trial_audio(remote_voice_id: str, content: bytes,
 def supported_engines(voice: dict) -> set[str]:
     """音色可用的引擎集合（音色×引擎亲和校验，PLAN §2.0）。
 
-    本地参考音 → soulx/indextts 可用；engines.minimax 登记过 → minimax；
-    有本地参考音 → doubao（零样本克隆天然兼容）。
+    本地参考音 → soulx/indextts/doubao（豆包零样本克隆）可用；
+    engines.minimax 登记过 → minimax 用登记音色；
+    未登记 → minimax 仍可用（引擎回落 DEFAULT_MINIMAX_VOICE 系统音色）。
     """
-    eng = {"soulx", "indextts", "doubao"} if voice.get("prompt_audio") \
+    eng = {"soulx", "indextts", "doubao", "minimax"} if voice.get("prompt_audio") \
         and (BASE_DIR / voice["prompt_audio"]).exists() else set()
     if ((voice.get("engines") or {}).get("minimax") or {}).get("voice_id"):
         eng.add("minimax")

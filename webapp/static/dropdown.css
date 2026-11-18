@@ -1,0 +1,18 @@
+/* 自定义下拉（Stitch 组件规范：悬浮菜单/选中对勾/hover 态） */
+.fancy-select{position:relative;display:inline-flex;width:100%}
+.fancy-trigger{width:100%;text-align:left;background:#fff;border:1px solid #C4C0B8;
+  border-radius:8px;color:var(--txt);padding:9px 30px 9px 12px;font:inherit;font-size:13px;
+  cursor:pointer;position:relative;transition:border-color 120ms}
+.fancy-trigger:hover{border-color:#858078}
+.fancy-trigger::after{content:"";position:absolute;right:12px;top:50%;width:9px;height:9px;
+  border-right:1.5px solid #676D76;border-bottom:1.5px solid #676D76;
+  transform:translateY(-70%) rotate(45deg)}
+.fancy-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;
+  background:#fff;border:1px solid #E6E3DD;border-radius:12px;padding:8px 0;
+  box-shadow:0 6px 20px rgba(48,52,58,.08);max-height:260px;overflow:auto}
+.fancy-select.open .fancy-menu{display:block}
+.fancy-option{display:flex;align-items:center;justify-content:space-between;
+  min-height:36px;padding:0 14px;font-size:13px;color:var(--txt);cursor:pointer}
+.fancy-option:hover{background:#F5F2EC}
+.fancy-option.selected{font-weight:500;color:#171717}
+.fancy-option.selected::after{content:"✓";color:#F67748;font-weight:700}

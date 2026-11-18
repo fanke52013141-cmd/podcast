@@ -1,0 +1,18 @@
+[
+  {
+    "n": 7,
+    "provider": "api",
+    "engine": "minimax",
+    "style": "故事剧场",
+    "issues": [],
+    "audio_sec": 72.9,
+    "turns": 11,
+    "job_id": "20261119-005312-3bd857",
+    "artifacts": [
+      "dir",
+      "cover",
+      "script",
+      "wav"
+    ]
+  }
+]
