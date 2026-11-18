@@ -581,6 +581,60 @@ def test_doubao(payload: dict = {}):
     return {"ok": True, "latency_ms": int((_t.time() - t0) * 1000)}
 
 
+# ---------- LLM 账号管理（借鉴 PPT_presentation_video 账号体系） ----------
+from webapp import accounts_store as acc_store
+
+
+@app.get("/api/llm-accounts")
+def llm_accounts_list():
+    act = acc_store.active_id()
+    return {"accounts": acc_store.list_accounts(), "active_id": act}
+
+
+@app.get("/api/llm-accounts/current")
+def llm_accounts_current():
+    a = acc_store.get_active()
+    if not a:
+        raise HTTPException(404, "还没有账号，先创建一个")
+    return {"account": acc_store.list_accounts and
+            [x for x in acc_store.list_accounts() if x["id"] == a["id"]][0]}
+
+
+@app.post("/api/llm-accounts")
+def llm_accounts_create(payload: dict):
+    try:
+        a = acc_store.create(payload or {})
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {"account": acc_store._to_dict(a)}
+
+
+@app.put("/api/llm-accounts/{account_id}")
+def llm_accounts_update(account_id: str, payload: dict):
+    try:
+        acc_store.update(account_id, payload or {})
+    except ValueError as e:
+        raise HTTPException(404 if "不存在" in str(e) else 422, str(e))
+    return {"ok": True}
+
+
+@app.post("/api/llm-accounts/{account_id}/select")
+def llm_accounts_select(account_id: str):
+    try:
+        a = acc_store.select(account_id)
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    return {"ok": True, "selected": a["name"], "account": a}
+
+
+@app.delete("/api/llm-accounts/{account_id}")
+def llm_accounts_delete(account_id: str):
+    try:
+        return acc_store.delete(account_id)
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+
+
 @app.get("/api/logs")
 def query_logs(source: str = "all", limit: int = 500, level: str = "",
                q: str = "", rid: str = "", jid: str = "", logger_name: str = ""):

@@ -58,11 +58,7 @@ async function loadSettings() {
   $("mxState").textContent = s.tts.minimax.key_set ? `已配置 ${s.tts.minimax.key_masked}` : "未配置";
   $("dbState").textContent = s.tts.doubao.key_set ? `已配置 ${s.tts.doubao.key_masked}` : "未配置";
   // 账号池 + 写稿提示词
-  try {
-    const accs = JSON.parse(s.llm.accounts || "[]");
-    $("sAccounts").value = accs.length ? JSON.stringify(accs, null, 2) : "";
-  } catch { $("sAccounts").value = s.llm.accounts || ""; }
-  $("sActiveAccount").value = s.llm.active_account || "";
+  renderAccounts();
   $("pSystem").value = s.prompts.system_editor || "";
   $("pStepA").value = s.prompts.step_a || "";
   $("pStepB").value = s.prompts.step_b || "";
@@ -175,9 +171,7 @@ async function save() {
   if (mxKey && !mxKey.includes("•")) body.MINIMAX_API_KEY = mxKey;
   const dbKey = $("sDbKey").value.trim();
   if (dbKey && !dbKey.includes("•")) body.DOUBAO_API_KEY = dbKey;
-  const accsRaw = $("sAccounts").value.trim();
-  if (accsRaw) body.LLM_ACCOUNTS = accsRaw;            // JSON 数组原样入 .env
-  body.LLM_ACTIVE_ACCOUNT = $("sActiveAccount").value.trim();
+  // 账号池走独立 /api/llm-accounts 接口（不再经 settings 保存）
   // 提示词：留空=恢复内置（存空串即视为未覆盖）
   body.PROMPT_SYSTEM_EDITOR = $("pSystem").value;
   body.PROMPT_STEP_A = $("pStepA").value;
@@ -261,3 +255,71 @@ function toast(msg) {
 }
 
 init();
+
+
+// ---------- LLM 账号池（借鉴 PPT_presentation_video：可编辑/切换/至少留一个） ----------
+let accCache = [], accActiveId = "", accEditing = null;
+
+async function renderAccounts() {
+  try {
+    const d = await (await fetch("/api/llm-accounts")).json();
+    accCache = d.accounts; accActiveId = d.active_id;
+  } catch { return; }
+  $("accList").innerHTML = accCache.map(a => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+      border:1px solid var(--line);border-radius:10px;background:${a.id === accActiveId ? "var(--surface2)" : "#fff"}">
+      <span class="mono" style="font-weight:600">${a.name}</span>
+      <span class="mono small">${a.model || ""}</span>
+      <span class="small mono">${a.base_url}</span>
+      ${a.id === accActiveId
+        ? '<span class="badge done" style="margin-left:auto">当前使用</span>'
+        : `<button class="ghost" style="margin-left:auto" data-act="select" data-id="${a.id}">切换到此账号</button>`}
+      <button class="ghost" data-act="edit" data-id="${a.id}">编辑</button>
+      ${accCache.length > 1 ? `<button class="ghost" data-act="del" data-id="${a.id}" style="color:var(--red)">删除</button>` : ""}
+    </div>`).join("");
+  $("accList").querySelectorAll("[data-act]").forEach(b =>
+    b.addEventListener("click", () => accAction(b.dataset.act, b.dataset.id)));
+}
+
+async function accAction(act, id) {
+  if (act === "select") {
+    await fetch(`/api/llm-accounts/${id}/select`, { method: "POST" });
+    toast("已切换账号（即时生效）"); renderAccounts();
+  } else if (act === "del") {
+    if (!confirm("删除这个账号？")) return;
+    const r = await fetch(`/api/llm-accounts/${id}`, { method: "DELETE" });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) return toast(d.detail || "删除失败");
+    toast("已删除"); renderAccounts();
+  } else if (act === "edit") {
+    const a = accCache.find(x => x.id === id);
+    accEditing = id;
+    $("accDlgTitle").textContent = `编辑账号 · ${a.name}`;
+    $("accName").value = a.name; $("accModel").value = a.model || "";
+    $("accUrl").value = a.base_url || ""; $("accKey").value = "";   // 掩码：留空不改
+    $("accDlg").showModal();
+  }
+}
+
+$("btnAddAcc").addEventListener("click", () => {
+  accEditing = null;
+  $("accDlgTitle").textContent = "添加账号";
+  $("accName").value = ""; $("accModel").value = "";
+  $("accUrl").value = ""; $("accKey").value = "";
+  $("accDlg").showModal();
+});
+$("accSave").addEventListener("click", async () => {
+  const body = { name: $("accName").value.trim(),
+                 base_url: $("accUrl").value.trim(),
+                 api_key: $("accKey").value.trim(),
+                 model: $("accModel").value.trim() };
+  if (!body.name) return toast("请填账号名称");
+  const r = await fetch(accEditing ? `/api/llm-accounts/${accEditing}` : "/api/llm-accounts",
+    { method: accEditing ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) return toast(d.detail || "保存失败");
+  $("accDlg").close();
+  toast(accEditing ? "账号已更新（若为激活账号即时生效）" : "账号已添加");
+  renderAccounts();
+});

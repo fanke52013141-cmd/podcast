@@ -4,7 +4,10 @@ LLM 调用走 OpenAI 兼容协议（DeepSeek 主 / GLM 备），langchain 懒加
 langchain 未安装时 CLI 可用 --dry-run（内置样稿）跑通除 LLM 外的全链路。
 """
 from __future__ import annotations
-import os, json, time
+import os
+import json
+import time
+from pathlib import Path
 from dataclasses import dataclass, field
 
 from contracts.models import SoulXScript, Job, load_voice_manifest
@@ -29,6 +32,18 @@ def _accounts() -> list[dict]:
     账号格式：{"name": "主号", "base_url": "https://…/v1",
               "api_key": "sk-…", "model": "deepseek-v4.1-flash-1017"}
     """
+    # llm_accounts.json（账号管理界面维护）优先；.env LLM_ACCOUNTS 兼容
+    store = Path(__file__).resolve().parent.parent / "llm_accounts.json"
+    pool = []
+    try:
+        data = json.loads(store.read_text(encoding="utf-8"))
+        pool = [a for a in data.get("accounts", []) if a.get("api_key")]
+        act = os.getenv("LLM_ACTIVE_ACCOUNT", "")
+        pool.sort(key=lambda a: 0 if a.get("id") == act else 1)
+        if pool:
+            return pool
+    except Exception:
+        pass
     raw = os.getenv("LLM_ACCOUNTS", "").strip()
     if raw:
         try:

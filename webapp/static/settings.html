@@ -80,14 +80,21 @@
           <input id="sVsCmd" class="mono" placeholder="python /path/VoiceStar/inference.py --text &quot;{text}&quot; --target_duration {duration} --ref_audio &quot;{ref}&quot; --output &quot;{out}&quot;"></div>
       </div>
 
-      <div class="field-label" style="margin-top:18px">写稿账号池（多账号轮换：写稿失败自动切换下一个）</div>
-      <div class="field-label" style="margin:0 0 6px">每行一个账号 JSON：<code>{"name":"主号","base_url":"https://…/v1","api_key":"sk-…","model":"模型名"}</code></div>
-      <textarea id="sAccounts" rows="4" class="mono" style="font-size:12px" placeholder='[
-  {"name": "主号", "base_url": "https://tokenrhythm.studio/v1", "api_key": "sk-…", "model": "deepseek-v4.1-flash-1017"},
-  {"name": "备用号", "base_url": "https://api.deepseek.com", "api_key": "sk-…", "model": "deepseek-chat"}
-]'></textarea>
-      <div class="field-label" style="margin:8px 0 0">激活账号（写稿时优先使用）</div>
-      <input id="sActiveAccount" placeholder="填账号 name，如：主号（留空=按列表顺序）">
+      <div class="field-label" style="margin-top:18px">写稿账号池（多账号：可编辑/切换，写稿失败自动轮换下一个）</div>
+      <div id="accList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="margin-top:10px"><button class="ghost" id="btnAddAcc">＋ 添加账号</button></div>
+      <dialog id="accDlg" style="max-width:520px;width:92vw">
+        <div class="dlg-head"><h3 id="accDlgTitle">添加账号</h3>
+          <button class="ghost" onclick="document.getElementById('accDlg').close()">关闭</button></div>
+        <div class="frow"><div><div class="field-label">账号名称</div><input id="accName" placeholder="主号"></div>
+          <div><div class="field-label">模型</div><input id="accModel" placeholder="deepseek-v4.1-flash-1017"></div></div>
+        <div class="field-label">API 地址（OpenAI 兼容 /v1）</div>
+        <input id="accUrl" placeholder="https://tokenrhythm.studio/v1">
+        <div class="field-label" style="margin-top:8px">API Key</div>
+        <input id="accKey" type="password" placeholder="sk-…" autocomplete="off">
+        <div class="actionbar" style="position:static;margin-top:14px">
+          <span></span><button class="primary" id="accSave">保存</button></div>
+      </dialog>
 
       <div class="field-label" style="margin-top:20px">写稿提示词（留空=内置默认；高级）</div>
       <div class="field-label" style="margin:0 0 6px">主编系统提示（STEP A 的角色设定）</div>
