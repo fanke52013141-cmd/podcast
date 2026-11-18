@@ -233,7 +233,11 @@ function renderPlayer() {
     au.addEventListener("play", () => $("playBtn").textContent = "⏸");
     au.addEventListener("pause", () => $("playBtn").textContent = "▶");
     $("playBtn").addEventListener("click", () => au.paused ? au.play() : au.pause());
-    $("speed").addEventListener("change", e => au.playbackRate = parseFloat(e.target.value));
+    document.querySelectorAll("#speed [data-v]").forEach(b =>
+      b.addEventListener("click", () => {
+        au.playbackRate = parseFloat(b.dataset.v);
+        document.querySelectorAll("#speed [data-v]").forEach(x => x.classList.toggle("on", x === b));
+      }));
     $("vol").addEventListener("input", e => au.volume = e.target.value / 100);
     $("noWav").hidden = true;
     $("durationTxt").textContent = "48kHz WAV";
@@ -255,11 +259,15 @@ function drawWave(ratio) {
   if (waveSeed === null) waveSeed = [...JID].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) | 0;
   let s = waveSeed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
   ctx.clearRect(0, 0, W, H);
-  const bw = 6, gap = 3;
+  const bw = 3, gap = 4;
   for (let x = 0; x + bw <= W; x += bw + gap) {
     const h = Math.max(8, (0.25 + rnd() * 0.75) * H * 0.9);
-    ctx.fillStyle = (x / W) <= ratio ? "#171717" : "#D4D4D4";
+    ctx.fillStyle = (x / W) <= ratio ? "#30343A" : "#D4D4D4";
     ctx.fillRect(x, mid - h / 2, bw, h);
+  }
+  if (ratio > 0) {                                   // 珊瑚橙播放头
+    ctx.fillStyle = "#F67748";
+    ctx.fillRect(Math.round(ratio * W) - 1, 0, 2, H);
   }
 }
 
@@ -319,11 +327,14 @@ function applySfxData(d) {
   $("sfxList").innerHTML = sfxAnchors.length
     ? sfxAnchors.map((a, i) => {
         const abs = resolved[i]?.abs_time;
-        return `<div>· 第 ${a.turn + 1} 轮 ${Math.round(a.ratio * 100)}% · ${a.name} ` +
-          `${a.gain_db}dB${abs !== undefined ? ` ≈ ${fmt(abs)}` : ""} ` +
-          `<button class="ghost del-sfx" data-i="${i}" style="padding:1px 8px;font-size:11px">✕</button></div>`;
+        return `<div class="sfxrow">
+          <span class="sfxdot"></span>
+          <span class="mono">第 ${a.turn + 1} 轮 · ${Math.round(a.ratio * 100)}% · ${a.name} · ${a.gain_db}dB${abs !== undefined ? ` · ≈${fmt(abs)}` : ""}</span>
+          <button class="del-sfx" data-i="${i}" title="删除">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+          </button></div>`;
       }).join("")
-    : `<span style="color:var(--txt2)">还没有锚点。选择轮次与句内位置后点「添加锚点」</span>`;
+    : "";
   $("sfxList").querySelectorAll(".del-sfx").forEach(b =>
     b.addEventListener("click", async () => {
       const r = await fetch(`/api/jobs/${JID}/sfx/${b.dataset.i}`, { method: "DELETE" });

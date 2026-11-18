@@ -55,10 +55,6 @@ function render() {
       <div class="vacts">
         <button class="vplay" data-id="${v.id}">▶ 试听</button>
         <button class="vedit" data-id="${v.id}">编辑</button>
-        <div class="seg">
-          <button class="segb ${isHost ? "on" : ""}" data-role="host" data-id="${v.id}">主持人</button>
-          <button class="segb ${isPartner ? "on" : ""}" data-role="partner" data-id="${v.id}">搭档</button>
-        </div>
       </div>
     </div>`;
   }).join("") : `<div class="empty" style="grid-column:1/-1">没有匹配的音色，换个描述试试</div>`;
@@ -66,18 +62,6 @@ function render() {
   document.querySelectorAll(".vplay").forEach(b => b.addEventListener("click", () => play(b.dataset.id, b)));
   document.querySelectorAll(".vedit").forEach(b => b.addEventListener("click", () =>
     openEdit(voices.find(v => v.id === b.dataset.id))));
-  document.querySelectorAll(".segb").forEach(b => b.addEventListener("click", async () => {
-    if (b.classList.contains("on")) return;
-    const r = await (await fetch(`/api/voices/${b.dataset.id}/set-role`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: b.dataset.role })
-    })).json();
-    if (r.ok) {
-      defaults[b.dataset.role === "host" ? "host" : "partner"] = b.dataset.id;
-      toast(b.dataset.role === "host" ? "已设为默认主持人（即时生效）" : "已设为默认搭档（即时生效）");
-      render();
-    }
-  }));
 }
 
 // ---------- 编辑 / 新建（P3-4） ----------

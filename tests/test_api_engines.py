@@ -82,6 +82,10 @@ class MockMiniMax(BaseHTTPRequestHandler):
                                    "base_resp": {"status_code": 0}})
             return self._send({"voice_id": "vd_design01", "trial_audio": HEX_AUDIO,
                                "base_resp": {"status_code": 0}})
+        if self.path == "/v1/t2a_v2" and MockMiniMax.behavior.get("design_flow"):
+            # 音色转正链路里的长参考合成
+            return self._send({"data": {"audio": HEX_AUDIO},
+                               "base_resp": {"status_code": 0}})
         if self.path == "/v1/files/upload":
             return self._send({"file": {"file_id": 42}, "base_resp": {"status_code": 0}})
         if self.path == "/v1/voice_clone":
@@ -182,8 +186,10 @@ def main():
 
     print("== 4. Mock 网关：音色设计/克隆 ==")
     MockMiniMax.behavior["mode"] = "ok"
+    MockMiniMax.behavior["design_flow"] = True
     vid, trial = mx.design_voice("低沉男声", "试听文本")
-    ok(vid == "vd_design01" and trial == FAKE_MP3, "voice_design 返回 voice_id+试听字节")
+    MockMiniMax.behavior["design_flow"] = False
+    ok(vid.startswith("pd-") and trial == FAKE_MP3, "voice_design 返回持久 voice_id+试听字节")
     try: mx.design_voice("", "x"); ok(False, "空描述拒绝")
     except mx.MiniMaxError: ok(True, "空描述拒绝")
     MockMiniMax.behavior["mode"] = "sensitive"

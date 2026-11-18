@@ -1,0 +1,12 @@
+{
+  "accounts": [
+    {
+      "id": "6d76bc170246",
+      "name": "主号",
+      "base_url": "https://tokenrhythm.studio/v1",
+      "api_key": "sk_tr_BTKKeid8eDngi6VQajc8nTzIOa7SOaZWNpV3GMf2yHI",
+      "model": "deepseek-v4.1-flash-1017",
+      "created_at": "2026-11-18T23:23:38"
+    }
+  ]
+}

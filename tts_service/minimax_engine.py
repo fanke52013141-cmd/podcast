@@ -18,6 +18,22 @@ import base64, hashlib, json, os, re, subprocess, time, uuid
 
 import requests
 
+# MiniMax 遇到不可发音的特殊符号（破折号/省略号等）会输出"哔"音。
+# 合成前净化为可发音的停顿标点。
+_SPECIAL_CHARS = [
+    ("——", "，"), ("—", "，"), ("――", "，"),
+    ("……", "。"), ("···", "。"),
+    ("·", "，"), ("―", "，"), ("–", "，"), ("‒", "，"),
+    ("~", "，"), ("～", "，"),
+]
+
+
+def sanitize_text(text: str) -> str:
+    for a, b in _SPECIAL_CHARS:
+        text = text.replace(a, b)
+    text = re.sub(r"[，。]{2,}", lambda m: m.group(0)[0], text)  # 连续停顿收敛
+    return text.strip()
+
 from core import logging_setup as _ls
 
 elog = _ls.setup("tts")
@@ -143,6 +159,7 @@ def _headers() -> dict:
 
 def t2a_sync(text: str, voice_id: str) -> bytes:
     """同步合成：返回 mp3 字节（data.audio 为 hex 编码）。"""
+    text = sanitize_text(text)
     _ls.log_event(elog, "minimax.t2a.request", voice_id=voice_id, text_len=len(text))
     r = requests.post(f"{BASE}/v1/t2a_v2", headers=_headers(),
                       json=build_t2a_body(text, voice_id), timeout=TIMEOUT_SYNTH)
@@ -191,6 +208,13 @@ def clone_voice(reference: bytes, voice_id: str, *,
     return voice_id
 
 
+def _persistent_voice_id(temp_vid: str) -> str:
+    """从临时试听 id 派生符合命名规则的持久音色 id。"""
+    import random
+    suffix = "".join(random.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=10))
+    return "pd-" + re.sub(r"[^A-Za-z0-9]", "", temp_vid)[-12:] + suffix
+
+
 def design_voice(prompt: str, preview_text: str, voice_id: str = "") -> tuple[str, bytes]:
     """音色设计：返回 (voice_id, 试听 mp3 字节)。trial_audio 为 hex 编码。"""
     _ls.log_event(elog, "minimax.voice_design.request", prompt_len=len(prompt),
@@ -204,6 +228,39 @@ def design_voice(prompt: str, preview_text: str, voice_id: str = "") -> tuple[st
     hex_audio = (payload or {}).get("trial_audio", "")
     _ls.log_event(elog, "minimax.voice_design.done", voice_id=vid,
                   trial_bytes=len(hex_audio) // 2)
+
+    # 方案 B：ttv-voice 是短期试听音色（数小时后回收）。立刻用试听音频
+    # voice_clone 登记为持久音色，返回的持久 id 供长期使用。
+    permanent_id = vid
+    trial_bytes = bytes.fromhex(hex_audio) if hex_audio else b""
+    if trial_bytes:
+        permanent_id = _promote(vid, trial_bytes, prompt, preview_text)
+        if permanent_id != vid:
+            return permanent_id, trial_bytes
+        # 转正失败：回退短期 id（不阻塞设计流程），已带日志
+    return vid, trial_bytes
+
+
+def _promote(temp_vid: str, trial_bytes: bytes, prompt: str, preview_text: str) -> str:
+    """把短期试听音色转正为长期克隆。试听音频太短时先用该音色合成
+    一段 60s 长参考（同音色、时长满足克隆要求），再克隆。"""
+    promote_id = _persistent_voice_id(temp_vid)
+    import random
+    filler = (preview_text + " " + prompt + " ") * 3 +         "这就是我们这一期的全部内容了，感谢你的收听，我们下期再见。"
+    ref_candidates = [
+        (trial_bytes, "audio/mpeg", "trial.mp3"),
+        (t2a_sync(filler[:280], temp_vid), "audio/mpeg", "ref.mp3"),
+    ]
+    for buf, mime, name in ref_candidates:
+        try:
+            got = clone_voice(buf, promote_id, mime=mime, filename=name)
+            _ls.log_event(elog, "minimax.voice_design.cloned",
+                          temp=temp_vid, permanent=got)
+            return got
+        except Exception as e:
+            _ls.log_event(elog, "minimax.voice_design.clone_retry",
+                          ref=name, error=str(e)[:160])
+    return temp_vid
     if not vid:
         raise MiniMaxError("MiniMax 未返回设计出的 voice_id")
     if not hex_audio:
