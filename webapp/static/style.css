@@ -14,6 +14,7 @@ body{
   color:var(--txt);
   font-family:'Geist','Inter','PingFang SC','Microsoft YaHei',sans-serif;font-size:14px}
 .mono{font-family:var(--mono)}
+[hidden]{display:none!important}
 .small{font-size:12px;color:var(--txt2)}
 
 /* 顶栏 */
@@ -47,9 +48,10 @@ textarea:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 1px var(-
 .drop .link{color:var(--amber);cursor:pointer;text-decoration:underline}
 .field-label{font-size:12px;color:var(--txt2);margin:14px 0 6px}
 .field-label b{color:var(--amber);font-weight:600}
-.styles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.styles{display:flex;flex-wrap:wrap;gap:8px}
 .styles button{background:var(--surface2);border:1px solid var(--line);border-radius:8px;
-  color:var(--txt2);padding:8px 4px;font:inherit;font-size:13px;cursor:pointer}
+  color:var(--txt2);padding:8px 12px;font:inherit;font-size:13px;cursor:pointer;
+  flex:1 1 100px;min-width:96px;max-width:132px}
 .styles button:hover{border-color:var(--line2);color:var(--txt)}
 .styles button.on{background:rgba(245,158,11,.12);border-color:var(--amber);color:var(--amber)}
 input[type=range]{width:100%;accent-color:var(--amber)}
@@ -87,9 +89,19 @@ button.ghost:hover{color:var(--txt);border-color:var(--line2)}
 .task .cover{width:44px;height:44px;border-radius:8px;flex:none;
   background:linear-gradient(135deg,#292a2c,#F3E9D2);display:flex;align-items:center;
   justify-content:center;color:var(--amber);font-size:18px}
+.task .tplay{width:44px;height:44px;border-radius:10px;flex:none;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:#30343A;border:1px solid #30343A;color:#fff}
+.task .tplay:hover{background:#1F2224;border-color:#1F2224}
+.task .tplay svg{width:18px;height:18px}
+.task .tplay .ic-pause{display:none}
+.task .tplay.playing .ic-play{display:none}
+.task .tplay.playing .ic-pause{display:block}
 .task .info{flex:1;min-width:0}
 .task .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .task .meta{color:var(--txt2);font-size:12px;margin-top:3px}
+.task .ttime{margin-left:auto;flex:none;color:#858078;font-size:11.5px;
+  white-space:nowrap;font-variant-numeric:tabular-nums}
 .badge{font-size:11px;padding:3px 9px;border-radius:6px;white-space:nowrap}
 .badge.done{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.25)}
 .badge.running{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
@@ -260,6 +272,12 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .rssrow select{background:var(--surface2);border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:6px}
 .rssbox .small{margin-top:8px;color:var(--txt2);line-height:1.7}
 .erow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.editcard .erow{gap:12px 18px}
+.editcard .erow label.small{display:inline-flex;align-items:center;gap:8px;line-height:1.2;white-space:nowrap}
+.editcard .erow input,.editcard .erow select,.editcard .erow button{height:32px;box-sizing:border-box}
+.editcard .erow input[type=range]{height:24px;padding:0}
+#gainTurn,#sfxTurn{min-width:150px}
+.editcard .erow select:disabled,.editcard .erow input:disabled,.editcard .erow button:disabled{opacity:.5;cursor:not-allowed}
 .erow input,.erow select{background:var(--surface2);border:1px solid var(--line);border-radius:6px;
   color:var(--txt);padding:5px 8px;font:inherit;font-family:var(--mono)}
 .erow input{width:90px}
@@ -390,7 +408,7 @@ dialog::backdrop{background:rgba(43,37,28,.35)}
 /* 卡片：更宽松的呼吸感 + hover 微浮起 */
 .vgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
 .vcard{background:var(--card);border:1.5px solid var(--line);border-radius:16px;
-  padding:16px 16px 12px;display:flex;flex-direction:column;gap:10px;
+  padding:16px 16px 14px;display:flex;flex-direction:column;gap:12px;
   transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
 .vcard:hover{transform:translateY(-3px);border-color:var(--amber);
   box-shadow:0 10px 26px rgba(180,83,9,.10)}
@@ -401,7 +419,7 @@ dialog::backdrop{background:rgba(43,37,28,.35)}
   background:linear-gradient(135deg,var(--tb),var(--tb2));
   display:flex;align-items:center;justify-content:center;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)}
-.vtile canvas{display:block}
+.vtile .voice-icon{width:32px;height:32px;display:block;fill:#30343A}
 .vmeta{flex:1;min-width:0}
 .vname{font-size:16.5px;font-weight:800;color:#1C1710;letter-spacing:-.01em}
 .vsub{font-size:12px;color:var(--txt2);margin-top:2px}
@@ -413,10 +431,6 @@ dialog::backdrop{background:rgba(43,37,28,.35)}
 .vtags{display:flex;flex-wrap:wrap;gap:6px}
 .vtag{font-size:11.5px;color:#7A6F5A;background:#F6EDD8;border-radius:999px;padding:3px 10px}
 .vtag.warn{color:#B45309;background:rgba(238,138,49,.12)}
-
-/* 细波形条 */
-.vwave{border-radius:8px;background:var(--surface2);padding:4px 6px}
-.vwave canvas{width:100%;height:26px;display:block}
 
 /* 动作行：主试听药丸 + 编辑 + 分段角色切换 */
 .vacts{display:flex;align-items:center;gap:8px}
@@ -433,11 +447,6 @@ dialog::backdrop{background:rgba(43,37,28,.35)}
 .segb:hover{color:var(--txt)}
 .segb.on{background:var(--amber);color:#fff;font-weight:700;
   box-shadow:0 1px 3px rgba(180,83,9,.35)}
-
-/* 绑定提示：琥珀点 + 细字 */
-.vbind{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--amber-deep);
-  background:rgba(238,138,49,.07);border-radius:8px;padding:6px 10px}
-.vbind .vdot{width:6px;height:6px;border-radius:50%;background:var(--amber);flex:none}
 
 /* 空状态与合规 */
 .vgrid .empty{border:1.5px dashed var(--line2);border-radius:14px;padding:40px 0;
@@ -579,7 +588,6 @@ dialog::backdrop{background:rgba(23,23,23,.4)}
 .lic.ok{color:#171717;background:var(--surface2)}
 .vtag{color:#525252;background:var(--surface2);border-radius:6px}
 .vtag.warn{color:#171717;background:var(--surface2)}
-.vwave{background:var(--surface2);border-radius:6px}
 .vacts{border-top:1px solid var(--line)}
 .vplay{background:#171717;color:#fff;border:none;border-radius:8px;
   transition:none}
@@ -590,16 +598,11 @@ dialog::backdrop{background:rgba(23,23,23,.4)}
 .segb{color:var(--txt2);border-radius:6px}
 .segb:hover{color:#171717}
 .segb.on{background:#171717;color:#fff;font-weight:600;box-shadow:none}
-.vbind{color:#525252;background:var(--surface2);border-radius:6px}
-.vbind .vdot{background:#171717}
 .vgrid .empty{border:1px dashed var(--line2);border-radius:8px}
 .compliance{color:var(--txt2)}
 
 /* 编辑弹窗 */
 #editDlg .actionbar{position:static}
-
-/* 声纹瓷砖 canvas 约束在瓷砖内 */
-.vtile canvas{width:44px;height:36px}
 
 /* ================= 平面化修正（用户要求：纯平面，禁止立体/阴影/原生3D质感） ================= */
 

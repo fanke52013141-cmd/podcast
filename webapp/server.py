@@ -348,6 +348,20 @@ def job_export(job_id: str):
     raise HTTPException(404, "成品尚未生成")
 
 
+@app.get("/api/jobs/{job_id}/play")
+def job_play(job_id: str):
+    """列表内联播放：优先成品 MP3，不带 attachment，浏览器可直接流式播放。"""
+    j = jobmgr.get_job(job_id) or {}
+    paths = j.get("paths") or {}
+    for key, mime in (("final_sfx", "audio/mpeg"),
+                      ("final_mp3", "audio/mpeg"),
+                      ("wav", "audio/wav")):
+        p = paths.get(key)
+        if p and os.path.exists(p):
+            return FileResponse(p, media_type=mime)
+    raise HTTPException(404, "音频尚未生成")
+
+
 @app.get("/api/jobs/{job_id}/cover")
 def job_cover(job_id: str):
     p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("cover")

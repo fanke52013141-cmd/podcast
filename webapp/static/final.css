@@ -105,8 +105,6 @@ dialog{background:#FFFEFA;border:1px solid #E6E3DD;border-radius:16px;
 .segb.on{background:#30343A}
 .lic.ok{background:#EAF6EF;color:#276B4C}
 .vtag.warn{background:#FFF5D9;color:#80570C}
-.vbind{background:#F5F2EC}
-.vbind .vdot{background:#F67748}
 
 /* ---- 13) 设置侧栏：无描边导航，浅底圆角选中 ---- */
 .setnav{background:#FFFEFA}
@@ -184,3 +182,48 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 /* 6) 卡片头精简（副标题删除后间距收紧） */
 .card h2{margin-bottom:2px}
 .create .field-label:first-child{margin-top:4px}
+
+/* ================= Alignment pass · 2026-11-18 =================
+   目的：统一跨页面的行/列基线，修掉后期卡、任务行、搜索行、设置行的
+   视觉不齐；不改任何字段、按钮和业务逻辑。 */
+
+/* 1) 后期四张卡：四列等宽、等高、同边框；禁用卡不再整卡降透明度 */
+.playercard.stack .switchcard{width:100%;
+  grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+.playercard.stack .switchcard .sec-head{grid-column:1/-1;padding:0;margin:0 0 2px}
+.playercard.stack .sw{width:100%;min-width:0;min-height:50px;box-sizing:border-box;
+  justify-content:flex-start}
+.playercard.stack .sw input{flex:0 0 auto;margin:0}
+.playercard.stack .sw span{min-width:0;line-height:1.25}
+.playercard.stack .sw.lock{opacity:1;background:#FFFEFA}
+.playercard.stack .sw.lock span{color:#9B958B}
+.playercard.stack .sw.lock input{opacity:.4}
+
+/* 2) 任务中心：所有右列与标题块按行垂直居中 */
+.qlist .task{align-items:center}
+.task .badge{display:inline-flex;align-items:center;justify-content:center}
+
+/* 3) 音色库：搜索框与右侧两个按钮同高 */
+.vsearch input,.vsearch .ghost,.vsearch .primary{height:38px;box-sizing:border-box}
+.vsearch .ghost,.vsearch .primary{display:inline-flex;align-items:center;justify-content:center}
+
+/* 4) 设置：同一行左右字段的控件同高；range 不再比输入框矮一截 */
+.setcard .frow>div{min-width:0}
+.setcard .frow input[type=range]{display:block;height:36px;margin:0}
+.setcard .keyrow{align-items:center}
+.setcard .keyrow input,.setcard .keyrow button{height:36px;box-sizing:border-box}
+
+/* 5) 工作台模板行：标签、下拉、按钮同一垂直基线 */
+.tplrow{min-height:36px}
+.tplrow .small{height:36px;line-height:1;position:relative;top:-1px}
+.tplrow select,.tplrow button{height:36px;box-sizing:border-box}
+
+/* 6) 任务详情剪辑/音效行：保持统一最小行高，避免换行后上下跳 */
+.editcard .erow{min-height:32px}
+.editcard .erow button{line-height:1.2}
+
+/* 6) 日志筛选栏：下拉、输入、按钮统一 36px */
+.lbar select,.lbar input,.lbar .ghost{height:36px;box-sizing:border-box;padding-top:0;padding-bottom:0}
+
+/* 7) 运行日志标题栏：下拉与刷新按钮统一 38px */
+.twrap .thead select,.twrap .thead .ghost{height:38px;box-sizing:border-box}

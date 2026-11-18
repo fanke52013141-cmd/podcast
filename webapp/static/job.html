@@ -74,8 +74,8 @@
       </div>
     <div class="erow">
       <label class="small">裁剪 开始 <input id="trimStart" type="number" step="0.5" min="0" placeholder="0"></label>
-      <label class="small">结束 <input id="trimEnd" type="number" step="0.5" min="0" placeholder="结尾"></label>
-      <label class="small">秒 &nbsp; 变速
+      <label class="small">结束 <input id="trimEnd" type="number" step="0.5" min="0" placeholder="结尾"> 秒</label>
+      <label class="small">变速
         <select id="editSpeed"><option value="0.75">0.75x</option><option value="1" selected>1.0x</option>
           <option value="1.25">1.25x</option><option value="1.5">1.5x</option></select></label>
       <button class="ghost amber" id="btnApplyEdit" disabled>生成剪辑版</button>
@@ -88,6 +88,7 @@
         <button class="ghost" id="btnAddGain">加入调整</button></label>
       <span class="small mono" id="gainList"></span>
     </div>
+    <div class="small" id="gainEmpty" hidden style="margin-top:10px;color:var(--txt2)">脚本生成后可调整单轮音量</div>
     <div class="small" style="margin-top:6px">运行日志：<a href="/traces?v=0.7" style="color:var(--amber)">/traces</a></div>
   </section>
 
@@ -95,7 +96,7 @@
   <section class="card editcard">
     <div class="sec-head"><h2>音效 / 转场</h2>
       </div>
-    <div class="erow">
+    <div class="erow" id="sfxRow">
       <label class="small">轮次 <select id="sfxTurn"></select></label>
       <label class="small">句内位置
         <input id="sfxRatio" type="range" min="0" max="100" value="0" style="width:120px">
@@ -106,6 +107,7 @@
       <button class="ghost amber" id="btnApplySfx" hidden>应用音效</button>
       <a class="ghost" id="btnSfxDl" hidden href="#">下载（含音效）</a>
     </div>
+    <div class="small" id="sfxEmpty" hidden style="margin-top:10px;color:var(--txt2)">脚本生成后可添加音效锚点</div>
     <div id="sfxList" class="small mono" style="margin-top:8px;line-height:1.9"></div>
   </section>
 

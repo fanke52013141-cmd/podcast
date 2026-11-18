@@ -1,11 +1,16 @@
 /* 任务中心 —— 全量列表 / 状态筛选 / 删除 */
 const $ = (id) => document.getElementById(id);
 let jobs = [], filter = "all";
+const taskPlayer = new Audio();
+taskPlayer.preload = "none";
+let playingJob = "";
 
-function jobTime(j) {                            // 从 job_id 解析创建时间 MM-DD HH:MM
+function jobTimeFull(j) {
+  const m = String(j.created || "").match(/^(\d{4})(\d{2})(\d{2})[ -](\d{2})(\d{2})(\d{2})/);
+  if (m) return `${m[1]}.${m[2]}.${m[3]} ${m[4]}:${m[5]}:${m[6]}`;
   try {
-    const p = j.job_id.split("-");               // YYYYMMDD-HHMMSS-xxxx
-    return `${p[0].slice(4,6)}-${p[0].slice(6,8)} ${p[1].slice(0,2)}:${p[1].slice(2,4)}`;
+    const p = j.job_id.split("-");
+    return `${p[0].slice(0,4)}.${p[0].slice(4,6)}.${p[0].slice(6,8)} ${p[1].slice(0,2)}:${p[1].slice(2,4)}:${p[1].slice(4,6)}`;
   } catch { return ""; }
 }
 
@@ -41,16 +46,52 @@ function render() {
   el.innerHTML = list.map(j => {
     const [cls, label] = badge[j.status] || ["script", j.status];
     return `<div class="task" onclick="location.href='/job/${j.job_id}'">
-      <div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-        stroke-width="1.5" stroke-linecap="round"><path d="M3 10v4M7 7v10M11 4v16M15 7v10M19 10v4"/></svg></div>
+      <button class="tplay ${playingJob === j.job_id ? "playing" : ""}" data-id="${j.job_id}"
+        onclick="toggleTaskAudio(event,'${j.job_id}',this)" title="播放" aria-label="播放">
+        <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>
+        <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx=".8"/><rect x="13.5" y="5" width="3.5" height="14" rx=".8"/></svg>
+      </button>
       <div class="info"><div class="title">${escapeHtml(j.topic || j.job_id)}</div>
-        <div class="meta">${j.minutes} 分钟 · ${j.style} · ${jobTime(j)}</div></div>
-      <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">查看详情 →</a>
+        <div class="meta">${j.minutes} 分钟 · ${j.style}</div></div>
       <span class="badge ${cls}">${label}</span>
+      <span class="ttime mono">${jobTimeFull(j)}</span>
+      <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">详情 →</a>
       <button class="ghost del" onclick="delJob(event,'${j.job_id}','${escapeHtml(j.topic || "").replace(/'/g, "")}')">删除</button>
     </div>`;
   }).join("");
+  syncPlayingButtons();
 }
+
+function syncPlayingButtons() {
+  document.querySelectorAll(".tplay").forEach(b => {
+    const on = b.dataset.id === playingJob;
+    b.classList.toggle("playing", on);
+    b.title = on ? "暂停" : "播放";
+    b.setAttribute("aria-label", on ? "暂停" : "播放");
+  });
+}
+function toggleTaskAudio(e, id, btn) {
+  e.stopPropagation();
+  if (playingJob === id && !taskPlayer.paused) {
+    taskPlayer.pause();
+    playingJob = "";
+    syncPlayingButtons();
+    return;
+  }
+  taskPlayer.pause();
+  playingJob = id;
+  syncPlayingButtons();
+  taskPlayer.src = `/api/jobs/${id}/play`;
+  const p = taskPlayer.play();
+  if (p && p.catch) p.catch(() => {
+    playingJob = "";
+    syncPlayingButtons();
+    toast("该任务暂无可播放音频（音频尚未生成）");
+  });
+}
+taskPlayer.addEventListener("ended", () => {
+  playingJob = ""; syncPlayingButtons();
+});
 
 async function delJob(e, id, name) {
   e.stopPropagation();

@@ -172,7 +172,6 @@ dialog::backdrop{background:rgba(48,52,58,.4)}
 .lic.ok{color:var(--green);background:var(--ok-bg)}
 .vtag{color:var(--txt2);background:var(--surface2);border-radius:999px}
 .vtag.warn{color:var(--warn);background:var(--warn-bg)}
-.vwave{background:var(--surface2);border-radius:8px}
 .vacts{border-top:1px solid var(--line)}
 .vplay{background:var(--amber);color:#fff;border:none;border-radius:8px}
 .vplay:hover{background:var(--amber-deep);transform:none}
@@ -182,8 +181,6 @@ dialog::backdrop{background:rgba(48,52,58,.4)}
 .segb{color:var(--txt2);border-radius:6px}
 .segb:hover{color:var(--txt)}
 .segb.on{background:var(--amber);color:#fff;font-weight:600;box-shadow:none}
-.vbind{color:var(--txt2);background:var(--surface2);border-radius:8px}
-.vbind .vdot{background:var(--brand)}
 .vgrid .empty{border:1px dashed var(--line2);border-radius:12px}
 .compliance{color:var(--txt2)}
 

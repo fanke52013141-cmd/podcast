@@ -36,8 +36,14 @@ function render() {
     const isHost = defaults.host === v.id, isPartner = defaults.partner === v.id;
     return `<div class="vcard">
       <div class="vtop">
-        <div class="vtile" style="--tb:#F0F0F0;--tb2:#E5E5E5;--bar:#525252">
-          <canvas class="miniwave" data-seed="${v.id}" width="88" height="40"></canvas>
+        <div class="vtile">
+          <svg class="voice-icon" viewBox="0 0 32 32" aria-hidden="true">
+            <rect x="4" y="13" width="3" height="6" rx="1.5"></rect>
+            <rect x="9.5" y="8" width="3" height="16" rx="1.5"></rect>
+            <rect x="15" y="4" width="3" height="24" rx="1.5"></rect>
+            <rect x="20.5" y="8" width="3" height="16" rx="1.5"></rect>
+            <rect x="26" y="13" width="3" height="6" rx="1.5"></rect>
+          </svg>
         </div>
         <div class="vmeta">
           <div class="vname">${v.name}</div>
@@ -46,7 +52,6 @@ function render() {
       </div>
       <div class="vtags">${(v.style_tags || []).map(t => `<span class="vtag">${t}</span>`).join("")}
         ${v.prompt_audio ? "" : '<span class="vtag warn">待录参考音频</span>'}</div>
-      <div class="vwave"><canvas class="fullwave" data-seed="${v.id}w" width="320" height="26"></canvas></div>
       <div class="vacts">
         <button class="vplay" data-id="${v.id}">▶ 试听</button>
         <button class="vedit" data-id="${v.id}">编辑</button>
@@ -55,12 +60,9 @@ function render() {
           <button class="segb ${isPartner ? "on" : ""}" data-role="partner" data-id="${v.id}">搭档</button>
         </div>
       </div>
-      ${(isHost || isPartner) ? `<div class="vbind"><span class="vdot"></span>${isHost ? "主持人" : "搭档"} · 跨集一致</div>` : ""}
     </div>`;
   }).join("") : `<div class="empty" style="grid-column:1/-1">没有匹配的音色，换个描述试试</div>`;
 
-  document.querySelectorAll(".miniwave").forEach(c => drawMini(c, true));
-  document.querySelectorAll(".fullwave").forEach(c => drawMini(c, false));
   document.querySelectorAll(".vplay").forEach(b => b.addEventListener("click", () => play(b.dataset.id, b)));
   document.querySelectorAll(".vedit").forEach(b => b.addEventListener("click", () =>
     openEdit(voices.find(v => v.id === b.dataset.id))));
@@ -153,33 +155,7 @@ async function uploadAudio() {
   await refresh();
 }
 
-// ---------- 试听 / 声纹（瓷砖 + 细波，柔和陶瓷色） ----------
-function drawMini(c, tile) {
-  const ctx = c.getContext("2d");
-  let s = [...c.dataset.seed].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 11) | 0;
-  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  const W = c.width, H = c.height;
-  ctx.clearRect(0, 0, W, H);
-  const barColor = tile
-    ? (getComputedStyle(c.parentElement).getPropertyValue("--bar") || "#525252").trim()
-    : "rgba(23,23,23,.25)";
-  const n = tile ? 9 : 48, bw = tile ? 5 : 3, gap = tile ? 4.2 : 2.4;
-  const total = n * bw + (n - 1) * gap;
-  let x = (W - total) / 2;
-  for (let i = 0; i < n; i++) {
-    const h = Math.max(tile ? 8 : 4, rnd() * (H - (tile ? 10 : 6)));
-    ctx.fillStyle = barColor;
-    ctx.globalAlpha = tile ? 0.9 : 0.35 + rnd() * 0.5;
-    roundBar(ctx, x, (H - h) / 2, bw, h, bw / 2);
-    x += bw + gap;
-  }
-  ctx.globalAlpha = 1;
-}
-function roundBar(ctx, x, y, w, h, r) {
-  if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
-  else ctx.fillRect(x, y, w, h);
-}
-
+// ---------- 试听 ----------
 async function play(id, btn) {
   const au = $("player");
   if (cur === id && !au.paused) { au.pause(); btn.textContent = "▶ 试听"; return; }

@@ -3,6 +3,9 @@ const $ = (id) => document.getElementById(id);
 const STYLES = ["幽默对谈","漫才","深夜电台","访谈","辩论","实战课堂","故事剧场","纪实探索","热点解读"];
 let curStyle = "幽默对谈";
 let voices = [];
+const taskPlayer = new Audio();
+taskPlayer.preload = "none";
+let playingJob = "";
 
 // ---------- 初始化 ----------
 async function init() {
@@ -189,25 +192,68 @@ async function createJob() {
 }
 
 // ---------- 任务列表 ----------
-function jobTime(j) {                            // 从 job_id 解析创建时间 MM-DD HH:MM
+function jobTimeFull(j) {                        // 从 created / job_id 解析完整创建时间
+  const m = String(j.created || "").match(/^(\d{4})(\d{2})(\d{2})[ -](\d{2})(\d{2})(\d{2})/);
+  if (m) return `${m[1]}.${m[2]}.${m[3]} ${m[4]}:${m[5]}:${m[6]}`;
   try {
     const p = j.job_id.split("-");               // YYYYMMDD-HHMMSS-xxxx
-    return `${p[0].slice(4,6)}-${p[0].slice(6,8)} ${p[1].slice(0,2)}:${p[1].slice(2,4)}`;
+    return `${p[0].slice(0,4)}.${p[0].slice(4,6)}.${p[0].slice(6,8)} ${p[1].slice(0,2)}:${p[1].slice(2,4)}:${p[1].slice(4,6)}`;
   } catch { return ""; }
 }
 function taskRow(j, withActions) {
   const [cls, label] = STATUS_BADGE[j.status] || ["script", j.status];
   const step = j.status === "running" && j.step ? ` · ${stepLabel(j.step)}` : "";
   const meta = j.error ? escapeHtml(j.error).slice(0, 50)
-    : `${j.minutes} 分钟 · ${j.style} · ${jobTime(j)}${step}`;
+    : `${j.minutes} 分钟 · ${j.style}${step}`;
   return `<div class="task" onclick="location.href='/job/${j.job_id}'">
-    <div class="cover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round"><path d="M3 10v4M7 7v10M11 4v16M15 7v10M19 10v4"/></svg></div>
+    <button class="tplay ${playingJob === j.job_id ? "playing" : ""}" data-id="${j.job_id}"
+      onclick="toggleTaskAudio(event,'${j.job_id}',this)" title="播放" aria-label="播放">
+      <svg class="ic-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M7 5l12 7-12 7z" fill="currentColor" stroke="none"/></svg>
+      <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx=".8"/><rect x="13.5" y="5" width="3.5" height="14" rx=".8"/></svg>
+    </button>
     <div class="info"><div class="title">${escapeHtml(j.topic)}</div>
       <div class="meta">${meta}</div></div>
     ${withActions ? `<span class="badge ${cls}">${label}${j.status === "running" ? " ⟳" : ""}</span>
       <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">查看详情 →</a>` : ""}
+    <span class="ttime mono">${jobTimeFull(j)}</span>
   </div>`;
+}
+function syncPlayingButtons() {
+  document.querySelectorAll(".tplay").forEach(b => {
+    const on = b.dataset.id === playingJob;
+    b.classList.toggle("playing", on);
+    b.title = on ? "暂停" : "播放";
+    b.setAttribute("aria-label", on ? "暂停" : "播放");
+  });
+}
+function toggleTaskAudio(e, id, btn) {
+  e.stopPropagation();
+  if (playingJob === id && !taskPlayer.paused) {
+    taskPlayer.pause();
+    playingJob = "";
+    syncPlayingButtons();
+    return;
+  }
+  taskPlayer.pause();
+  playingJob = id;
+  syncPlayingButtons();
+  taskPlayer.src = `/api/jobs/${id}/play`;
+  const p = taskPlayer.play();
+  if (p && p.catch) p.catch(() => {
+    playingJob = "";
+    syncPlayingButtons();
+    taskToast("该任务暂无可播放音频（音频尚未生成）");
+  });
+}
+taskPlayer.addEventListener("ended", () => {
+  playingJob = ""; syncPlayingButtons();
+});
+function taskToast(msg) {
+  const t = $("taskToast");
+  if (!t) return toastMsg(msg);
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 3000);
 }
 
 const STATUS_BADGE = {
@@ -226,6 +272,7 @@ async function refreshTasks() {
   if (!jobs.length) return;
   jobs = jobs.slice(0, 5);                       // 工作台只显示最近 5 个，全部见任务中心
   el.innerHTML = jobs.map(j => taskRow(j, false)).join("");
+  syncPlayingButtons();
 }
 function stepLabel(s) {
   return { research: "抽取素材", draft: "戏剧化改写", rewrite: "口语化", validate: "校验", synthesize: "语音合成" }[s] || s;

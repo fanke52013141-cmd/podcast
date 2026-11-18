@@ -94,9 +94,39 @@ function estTimestamps(turns) {
   for (const [, txt] of turns) { out.push(t); t += Math.max(1, txt.length) / rate; }
   out.push(t); return out;
 }
+function fillTurnSelect(id) {
+  const turns = job.script?.text || [];
+  const el = $(id);
+  if (!el) return;
+  el.innerHTML = turns.length
+    ? turns.map(([sid], i) => `<option value="${i}">第 ${i + 1} 轮 · ${sid}</option>`).join("")
+    : `<option value="">暂无轮次</option>`;
+  el.disabled = !turns.length;
+}
+function syncSfxControls() {
+  const turns = job.script?.text || [];
+  fillTurnSelect("sfxTurn");
+  $("sfxRow").hidden = !turns.length;
+  $("sfxEmpty").hidden = !!turns.length;
+  $("sfxList").hidden = !turns.length;
+  $("sfxRatio").disabled = !turns.length;
+  $("sfxGain").disabled = !turns.length;
+  $("sfxName").disabled = !turns.length;
+  $("btnAddSfx").disabled = !turns.length;
+}
 function renderTurns() {
   const turns = job.script?.text || [];
-  if (!turns.length) return;
+  fillTurnSelect("gainTurn");
+  syncSfxControls();
+  $("btnAddGain").disabled = !turns.length;
+  $("gainDb").disabled = !turns.length;
+  $("gainRow").hidden = !turns.length;
+  $("gainEmpty").hidden = !!turns.length;
+  if (!turns.length) {
+    $("gainList").textContent = "";
+    $("btnApplyEdit").disabled = true;
+    return;
+  }
   const ts = estTimestamps(turns);
   const bad = new Set(job.qc?.bad_turns || []);
   const cerMap = {};
@@ -120,9 +150,7 @@ function renderTurns() {
         ? `质检通过 · 平均 CER ${(q.cer_avg * 100).toFixed(2)}%（${q.mode}）`
         : `<span style="color:var(--red)">质检未过 · ${bad.size} 轮待重做 · 平均 CER ${(q.cer_avg * 100).toFixed(2)}%</span>`;
   }
-  // 剪辑面板：轮次下拉
-  $("gainTurn").innerHTML = turns.map(([sid], i) =>
-    `<option value="${i}">第 ${i + 1} 轮 · ${sid}</option>`).join("");
+  // 剪辑面板：轮次下拉已由 fillTurnSelect 统一处理
   $("btnApplyEdit").disabled = !job.paths?.wav;
   if (job.paths?.edited_mp3) {
     $("btnEditedDl").hidden = false;
@@ -250,9 +278,7 @@ function subscribe() {
 // ---------- 音效/转场（P2-6） ----------
 let sfxAnchors = [];
 function setupSfx() {
-  const turns = job.script?.text || [];
-  $("sfxTurn").innerHTML = turns.map(([sid], i) =>
-    `<option value="${i}">第 ${i + 1} 轮 · ${sid}</option>`).join("");
+  syncSfxControls();
   $("sfxRatio").addEventListener("input", e =>
     $("sfxRatioVal").textContent = e.target.value + "%");
   $("btnAddSfx").addEventListener("click", async () => {
