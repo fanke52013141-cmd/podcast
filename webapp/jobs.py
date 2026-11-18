@@ -32,6 +32,12 @@ def trace(job_id: str, event: str, **meta):
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     except Exception:
         pass
+    try:                                    # 双写统一日志（结构化、可检索）
+        from core import logging_setup as _ls
+        _ls.set_job_id(job_id)
+        _ls.log_event(_ls.setup("webapp"), f"job.{event}", **meta)
+    except Exception:
+        pass
 
 
 def read_traces(job_id: str = "", limit: int = 200) -> list[dict]:
@@ -54,7 +60,7 @@ def read_traces(job_id: str = "", limit: int = 200) -> list[dict]:
 
 def create_job(topic: str, style: str, minutes: int, material: str = "",
                provider: str = "mock", voice_map: dict | None = None,
-               tts_url: str = "", bgm: str = "") -> dict:
+               tts_url: str = "", bgm: str = "", tts_engine: str = "") -> dict:
     job = Job(topic=topic, style=style, minutes=minutes, provider=provider)
     job_dir = JOBS_DIR / job.job_id
     job_dir.mkdir(exist_ok=True)
@@ -69,7 +75,8 @@ def create_job(topic: str, style: str, minutes: int, material: str = "",
         pass
     _pool.submit(_run, job.job_id, topic, style, minutes, material,
                  provider, voice_map or {"S1": "v01_female_warm",
-                                         "S2": "v02_male_deep"}, tts_url, bgm)
+                                         "S2": "v02_male_deep"}, tts_url, bgm,
+                 tts_engine)
     return {"job_id": job.job_id, "status": job.status}
 
 
@@ -108,7 +115,8 @@ def get_job(job_id: str) -> dict | None:
 
 
 def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
-         provider: str, voice_map: dict, tts_url: str, bgm: str = ""):
+         provider: str, voice_map: dict, tts_url: str, bgm: str = "",
+         tts_engine: str = ""):
     job = Job(topic=topic, style=style, minutes=minutes,
               job_id=job_id, provider=provider)
     try:
@@ -159,7 +167,8 @@ def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
             if evt.get("step") == "synthesizing":
                 _set(job_id, synth=f"{evt.get('segment')}/{evt.get('total')}")
         t0 = time.time()
-        meta = client.synthesize(script.to_dict(), on_progress=_on_synth)
+        meta = client.synthesize(script.to_dict(), on_progress=_on_synth,
+                                 engine=tts_engine)
         trace(job_id, "step_ms", step="synthesize", ms=int((time.time() - t0) * 1000))
         paths = {"dir": str(JOBS_DIR / job_id), "script": str(sf),
                  "wav": meta.get("wav_path", "")}

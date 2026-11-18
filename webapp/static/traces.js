@@ -28,7 +28,7 @@ async function load() {
       <div class="tmono" style="width:130px">${r.ts.replace("T", " ").slice(5)}</div>
       <span class="badge ${cls}" style="width:56px;text-align:center">${EVENT_NAME[r.event] || r.event}</span>
       <div class="txt mono small" style="flex:1">${escapeHtml(meta)}</div>
-      <a class="small" style="color:var(--amber);text-decoration:none"
+      <a class="small" style="color:var(--txt);text-decoration:none"
          href="/job/${r.job}">${r.job.slice(-6)}</a>
     </div>`;
   }).join("");

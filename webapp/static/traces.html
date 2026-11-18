@@ -3,31 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>运行日志 · AI 播客工坊</title>
-<link rel="stylesheet" href="/static/style.css?v=0.2">
+<title>运行日志 · AI 播客</title>
+<link rel="stylesheet" href="/static/style.css?v=0.7">
+<link rel="stylesheet" href="/static/duo.css?v=0.7">
+<link rel="stylesheet" href="/static/final.css?v=0.7">
 </head>
 <body>
 <header class="topbar">
-  <div class="logo"><span class="wave">▮▮▮</span> AI 播客工坊</div>
+  <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a href="/voices?v=0.2">音色库</a>
-    <a href="/tasks?v=0.2">任务中心</a>
-    <a href="/settings?v=0.2">设置</a>
+    <a href="/voices?v=0.7">音色库</a>
+    <a href="/tasks?v=0.7">任务中心</a>
+    <a href="/settings?v=0.7">设置</a>
+    <a href="/logs?v=0.7">日志</a>
   </nav>
-  <div class="user">Studio</div>
 </header>
 
 <main class="twrap">
   <div class="thead">
     <h2>运行日志</h2>
-    <select id="jobSel" class="mono" style="background:#141618;border:1px solid var(--line);
+    <select id="jobSel" class="mono" style="background:var(--surface2);border:1px solid var(--line);
       border-radius:8px;color:var(--txt);padding:6px 10px;max-width:420px"></select>
-    <span class="small">任务级 trace · 本地 JSONL（P2-5）</span>
+    
     <button class="ghost" id="btnRefresh">刷新</button>
   </div>
   <div id="traceList" class="tasklist"><div class="empty">加载中…</div></div>
 </main>
-<script src="/static/traces.js?v=0.2"></script>
+<script src="/static/traces.js?v=0.7"></script>
 </body>
 </html>

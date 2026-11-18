@@ -10,6 +10,27 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+
+
+# ---------- 统一日志（PLAN · 日志系统 2026-11-18） ----------
+import logging
+import time
+
+from core import logging_setup as logsys
+from core.logging_setup import LOG_DIR
+
+log = logsys.setup("webapp")
+
+
+def log_event(logger, event, **ctx):
+    """便捷包装（request_id/job_id 由 contextvars 自动带上）。"""
+    logsys.log_event(logger, event, **ctx)
+
+
+def _new_rid() -> str:
+    import uuid as _u
+    return _u.uuid4().hex[:12]
+
 from pydantic import BaseModel
 
 from orchestrator.extract import extract
@@ -23,6 +44,26 @@ app = FastAPI(title="AI 播客工坊", version="0.1.0")
 @app.on_event("startup")
 def _startup():
     jobmgr.start_scheduler()          # P3-5 夜间队列轮询（DISABLE_SCHEDULER=1 可关）
+
+
+@app.middleware("http")
+async def logging_context(request, call_next):
+    """每请求分配 request_id（响应头 X-Request-ID）+ 记录方法/路径/状态/耗时。"""
+    rid = logsys.set_request_id(_new_rid())
+    t0 = time.perf_counter()
+    try:
+        resp = await call_next(request)
+    except Exception as e:
+        log.error(f"{type(e).__name__}: {e}", exc_info=True,
+                  extra={"event": "http.unhandled_error",
+                         "ctx": {"method": request.method, "path": request.url.path}})
+        raise
+    dur = round((time.perf_counter() - t0) * 1000, 1)
+    resp.headers["X-Request-ID"] = rid
+    if not request.url.path.startswith("/static"):
+        log_event(log, "http.request", method=request.method,
+                  path=request.url.path, status=resp.status_code, duration_ms=dur)
+    return resp
 
 
 @app.middleware("http")
@@ -61,6 +102,11 @@ def traces_page():
     return FileResponse(BASE_DIR / "webapp" / "static" / "traces.html")
 
 
+@app.get("/logs")
+def logs_page():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "logs.html")
+
+
 @app.get("/job/{job_id}")
 def job_page(job_id: str):
     if jobmgr.get_job(job_id) is None:
@@ -81,6 +127,9 @@ class CreateReq(BaseModel):
     provider: str = "mock"        # mock | api（api 需配置 DEEPSEEK_API_KEY）
     tts_url: str = ""             # 留空则只产出脚本
     bgm: str = ""                 # 模板指定 BGM 文件名（空=按风格自动）
+    tts_engine: str = ""          # soulx | indextts | minimax | doubao（空=服务端默认）
+    host_voice: str = ""          # 主持人音色（空=用默认值）
+    partner_voice: str = ""       # 搭档音色（空=用默认值）
 
 
 @app.post("/api/jobs")
@@ -96,12 +145,24 @@ def create_job(req: CreateReq):
             print(f"[extract] {req.topic.strip()} -> {source_type}, {len(material)} chars")
     except Exception as e:
         raise HTTPException(400, f"素材抽取失败: {e}")
-    voice_map = {"S1": os.getenv("DEFAULT_HOST_VOICE", "v01_female_warm"),
-                 "S2": os.getenv("DEFAULT_PARTNER_VOICE", "v02_male_deep")}
+    voice_map = {"S1": req.host_voice or os.getenv("DEFAULT_HOST_VOICE", "v01_female_warm"),
+                 "S2": req.partner_voice or os.getenv("DEFAULT_PARTNER_VOICE", "v02_male_deep")}
     tts_url = req.tts_url or os.getenv("TTS_URL", "")
+    # 音色×引擎亲和校验（PLAN §2.0）：引擎指定且 TTS 可用时不兼容组合直接拦截
+    if req.tts_engine and tts_url:
+        from webapp import voice_store
+        bad = []
+        for sid, vid in voice_map.items():
+            v = voice_store.get(vid)
+            sup = voice_store.supported_engines(v) if v else set()
+            if sup and req.tts_engine not in sup:
+                bad.append(f"{sid}={vid}（该音色不支持 {req.tts_engine}，支持: {', '.join(sorted(sup))}）")
+        if bad:
+            raise HTTPException(400, "引擎与音色不兼容: " + "; ".join(bad))
     return jobmgr.create_job(req.topic.strip(), req.style, req.minutes,
                              material=material, provider=req.provider,
-                             voice_map=voice_map, tts_url=tts_url, bgm=req.bgm)
+                             voice_map=voice_map, tts_url=tts_url, bgm=req.bgm,
+                             tts_engine=req.tts_engine)
 
 
 @app.post("/api/upload")
@@ -454,6 +515,87 @@ def fixed_segment(req: FixedReq):
         raise HTTPException(503, str(e))
     except Exception as e:
         raise HTTPException(500, f"{type(e).__name__}: {e}")
+
+
+@app.post("/api/settings/test-minimax")
+def test_minimax(payload: dict = {}):
+    """MiniMax 探活：4 字最小合成（成本可忽略），验证 Key/网络。"""
+    import time as _t
+    from tts_service import minimax_engine as mx
+    user_key = (payload or {}).get("api_key", "").strip()
+    saved = None
+    if user_key and "•" not in user_key:
+        saved = os.environ.get("MINIMAX_API_KEY")
+        os.environ["MINIMAX_API_KEY"] = user_key
+    t0 = _t.time()
+    try:
+        mx.t2a_sync("你好。", mx.DEFAULT_VOICE)
+    except Exception as e:
+        if saved is not None:
+            os.environ["MINIMAX_API_KEY"] = saved
+        return {"ok": False, "error": str(e)[:120]}
+    if saved is not None:
+        os.environ["MINIMAX_API_KEY"] = saved
+    return {"ok": True, "latency_ms": int((_t.time() - t0) * 1000)}
+
+
+@app.post("/api/settings/test-doubao")
+def test_doubao(payload: dict = {}):
+    """豆包探活：最小合成，验证 Key/网络。"""
+    import time as _t
+    from tts_service import doubao_engine as db
+    user_key = (payload or {}).get("api_key", "").strip()
+    saved = None
+    if user_key and "•" not in user_key:
+        saved = os.environ.get("DOUBAO_API_KEY")
+        os.environ["DOUBAO_API_KEY"] = user_key
+    t0 = _t.time()
+    try:
+        db.create_speech("你好。", [], "")
+    except Exception as e:
+        if saved is not None:
+            os.environ["DOUBAO_API_KEY"] = saved
+        return {"ok": False, "error": str(e)[:120]}
+    if saved is not None:
+        os.environ["DOUBAO_API_KEY"] = saved
+    return {"ok": True, "latency_ms": int((_t.time() - t0) * 1000)}
+
+
+@app.get("/api/logs")
+def query_logs(source: str = "all", limit: int = 500, level: str = "",
+               q: str = "", rid: str = "", jid: str = "", logger_name: str = ""):
+    """系统日志查询（倒序）：source=webapp|tts|all；level/q/rid/jid/logger 过滤。"""
+    limit = max(1, min(int(limit), 2000))
+    files = {"webapp": LOG_DIR / "webapp.jsonl", "tts": LOG_DIR / "tts.jsonl"}
+    picks = list(files.values()) if source == "all" else ([files[source]] if source in files else [])
+    merged: list[dict] = []
+    for f in picks:
+        merged.extend(logsys.read_jsonl(f, limit=limit, level=level, q=q,
+                                        rid=rid, jid=jid, logger_name=logger_name))
+    merged.sort(key=lambda r: r.get("ts", ""), reverse=True)
+    return {"count": len(merged), "items": merged[:limit],
+            "files": {k: {"path": str(v), "exists": v.exists(),
+                          "size": v.stat().st_size if v.exists() else 0}
+                      for k, v in files.items()}}
+
+
+@app.post("/api/logs/level")
+def set_log_level(payload: dict):
+    """运行时调级：{"logger": "webapp|tts", "level": "DEBUG|INFO|WARNING|ERROR"}。"""
+    name = str((payload or {}).get("logger", "webapp"))
+    level = str((payload or {}).get("level", "INFO")).upper()
+    if level not in ("DEBUG", "INFO", "WARNING", "ERROR"):
+        raise HTTPException(400, f"非法级别: {level}")
+    if name not in ("webapp", "tts"):
+        raise HTTPException(400, f"未知日志器: {name}")
+    logging.getLogger(name).setLevel(getattr(logging, level))
+    log_event(log, "log.level_changed", target=name, level=level)
+    return {"ok": True, "logger": name, "level": level}
+
+
+@app.get("/api/logs/level")
+def get_log_levels():
+    return {n: logging.getLevelName(logging.getLogger(n).level) for n in ("webapp", "tts")}
 
 
 @app.post("/api/diag")
