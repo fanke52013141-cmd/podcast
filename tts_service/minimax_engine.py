@@ -63,7 +63,7 @@ def build_t2a_body(text: str, voice_id: str, *, speed: float = 1.0,
                    vol: float = 1.0, pitch: int = 0,
                    sample_rate: int = 32000, format_: str = "mp3",
                    bitrate: int = 128000, channel: int = 1,
-                   aigc_watermark: bool = False,
+                   aigc_watermark: bool = False,   # 用户要求：水印永久关闭（哔声根因）
                    english_normalization: bool = True) -> dict:
     """同步 t2a_v2 请求体。voice_setting.voice_id 必填（上游硬校验）。"""
     if not (text or "").strip():
@@ -80,14 +80,14 @@ def build_t2a_body(text: str, voice_id: str, *, speed: float = 1.0,
             "audio_sample_rate": sample_rate, "bitrate": bitrate,
             "format": format_, "channel": channel,
         },
-        "aigc_watermark": aigc_watermark,
+        "aigc_watermark": False,            # 强制关闭（用户要求，防哔声回归）
     }
 
 
 def build_voice_clone_body(file_id: int, voice_id: str, *,
                            need_noise_reduction: bool = True,
                            need_volume_normalization: bool = True,
-                           aigc_watermark: bool = True) -> dict:
+                           aigc_watermark: bool = False) -> dict:  # 水印永久关闭
     """voice_clone 请求体（voice_id 命名规则上游校验，本地先拦）。"""
     if not VALID_VOICE_ID.match(voice_id or ""):
         raise MiniMaxError("voice_id 需 8~256 位、字母开头、仅字母数字与 - _，末位不能是 - 或 _")
@@ -95,12 +95,12 @@ def build_voice_clone_body(file_id: int, voice_id: str, *,
         "file_id": file_id, "voice_id": voice_id, "model": MODEL,
         "need_noise_reduction": need_noise_reduction,
         "need_volume_normalization": need_volume_normalization,
-        "aigc_watermark": aigc_watermark,
+        "aigc_watermark": False,            # 强制关闭（用户要求，防哔声回归）
     }
 
 
 def build_voice_design_body(prompt: str, preview_text: str,
-                            voice_id: str = "", aigc_watermark: bool = True) -> dict:
+                            voice_id: str = "", aigc_watermark: bool = False) -> dict:  # 水印永久关闭
     if not (prompt or "").strip():
         raise MiniMaxError("音色描述不能为空")
     if not (preview_text or "").strip():
@@ -108,7 +108,7 @@ def build_voice_design_body(prompt: str, preview_text: str,
     if voice_id and not VALID_VOICE_ID.match(voice_id):
         raise MiniMaxError("自定义 voice_id 需 8~256 位、字母开头、仅字母数字与 - _")
     body: dict = {"prompt": prompt.strip(), "preview_text": preview_text.strip(),
-                  "aigc_watermark": aigc_watermark}
+                  "aigc_watermark": False}   # 强制关闭（用户要求，防哔声回归）
     if voice_id:
         body["voice_id"] = voice_id
     return body

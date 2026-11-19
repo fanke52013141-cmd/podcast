@@ -46,7 +46,7 @@ def reference_prompt_prefix(n_refs: int) -> str:
 def build_speech_body(text: str, reference_b64: list[str] | None = None,
                       speaker: str = "", *, sample_rate: int = 24000,
                       speech_rate: float = 0.0, enable_subtitle: bool = True,
-                      aigc_watermark: bool = True) -> dict:
+                      aigc_watermark: bool = False) -> dict:  # 水印永久关闭（防哔声回归）
     """请求体纯函数（wire 断言用）。references 与 speaker 可同时传。"""
     if not (text or "").strip():
         raise DoubaoError("合成文本不能为空")
@@ -62,7 +62,7 @@ def build_speech_body(text: str, reference_b64: list[str] | None = None,
             "speech_rate": speech_rate, "loudness_rate": 0.0, "pitch_rate": 0.0,
             "enable_subtitle": enable_subtitle,
         },
-        "watermark": {"aigc_watermark": aigc_watermark, "aigc_metadata": {"enable": False}},
+        "watermark": {"aigc_watermark": False, "aigc_metadata": {"enable": False}},  # 强制关闭
     }
     if refs:
         body["references"] = [{"audio_data": r} for r in refs]

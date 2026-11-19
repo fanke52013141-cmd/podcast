@@ -154,7 +154,7 @@ def main():
     ok(dbb["speaker"] == "speaker-x", "豆包 speaker 透传")
     ok(db.reference_prompt_prefix(1) in dbb["text_prompt"], "豆包 text_prompt 参考音前缀")
     ok(dbb["audio_config"]["enable_subtitle"] is True, "豆包字幕开启")
-    ok(dbb["watermark"]["aigc_watermark"] is True, "豆包水印字段")
+    ok(dbb["watermark"]["aigc_watermark"] is False, "豆包水印字段（永久关闭）")
     try:
         db.build_speech_body("x" * 10001, ["A" * 100])
         ok(False, "豆包字数超限应拒绝")
