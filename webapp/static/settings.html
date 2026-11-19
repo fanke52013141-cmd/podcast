@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>设置 · AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.18">
-<link rel="stylesheet" href="/static/duo.css?v=0.18">
-<link rel="stylesheet" href="/static/final.css?v=0.18">
-<link rel="stylesheet" href="/static/dropdown.css?v=0.18">
-<script src="/static/dropdown.js?v=0.18" defer></script>
-<link rel="stylesheet" href="/static/warm.css?v=0.18">
-<script src="/static/creator.js?v=0.18" defer></script>
+<link rel="stylesheet" href="/static/style.css?v=0.19">
+<link rel="stylesheet" href="/static/duo.css?v=0.19">
+<link rel="stylesheet" href="/static/final.css?v=0.19">
+<link rel="stylesheet" href="/static/dropdown.css?v=0.19">
+<script src="/static/dropdown.js?v=0.19" defer></script>
+<link rel="stylesheet" href="/static/warm.css?v=0.19">
+<script src="/static/creator.js?v=0.19" defer></script>
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a href="/voices?v=0.18">音色库</a>
-    <a href="/tasks?v=0.18">任务中心</a>
-    <a class="active" href="/settings?v=0.18">设置</a>
-    <a href="/logs?v=0.18">日志</a>
+    <a href="/voices?v=0.19">音色库</a>
+    <a href="/tasks?v=0.19">任务中心</a>
+    <a class="active" href="/settings?v=0.19">设置</a>
+    <a href="/logs?v=0.19">日志</a>
   </nav>
 </header>
 
@@ -213,7 +213,7 @@
       <div id="qList" class="qlist" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
     </section>
 
-    <dialog id="styleDlg" style="width:460px;max-width:calc(100vw - 32px)">
+    <dialog id="styleDlg" style="width:640px;max-width:calc(100vw - 32px)">
       <div class="dlg-head"><h3 id="styleDlgTitle">新建风格</h3>
         <button class="ghost" type="button" id="styleClose">关闭</button></div>
       <div class="field-label">风格名称（最多 4 个字）</div>
@@ -225,6 +225,9 @@
         <input id="styleInterrupt" type="number" min="1" max="8" value="4" style="width:74px">
         <span class="small">次 / 期</span>
       </div>
+      <div class="field-label">提示词模板（可选 · 留空则用默认写稿流程）</div>
+      <textarea id="styleTemplate" rows="10" style="font-family:var(--mono,monospace);font-size:12px;line-height:1.7" placeholder="整份覆盖默认写稿提示词，可用占位符：&#10;{material} 素材正文&#10;{style_desc} 上面的风格描述&#10;{words} 目标字数&#10;{n_interruptions} 抢话次数&#10;&#10;示例：&#10;你是一名资深播客主编，请根据以下素材写一份「{style_desc}」风格的对话蓝本，正文约 {words} 字，其中搭档自然打断主持约 {n_interruptions} 次。&#10;---&#10;{material}"></textarea>
+      <p class="small" style="color:var(--txt2);margin:6px 2px 0">填写后本风格写稿将整份使用该模板（含双字词占比、句长、语气词等写稿规矩可自行写入）；留空走内置流程。</p>
       <div id="styleError" class="creator-error" hidden></div>
       <div class="actionbar" style="position:static;margin-top:18px">
         <span></span>
@@ -241,6 +244,6 @@
   </div>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/settings.js?v=0.18"></script>
+<script src="/static/settings.js?v=0.19"></script>
 </body>
 </html>

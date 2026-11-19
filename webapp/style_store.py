@@ -67,6 +67,7 @@ def get_style(name: str, account_id: str = creator_store.DEFAULT_ACCOUNT_ID) -> 
 def _validate(payload: dict, account_id: str, editing_id: str | None = None) -> tuple[str, str, int]:
     name = str((payload or {}).get("name") or "").strip()
     desc = str((payload or {}).get("desc") or "").strip()
+    prompt_template = str((payload or {}).get("prompt_template") or "").strip()
     if not name:
         raise ValueError("风格名称不能为空")
     if len(name) > 4:
@@ -83,13 +84,14 @@ def _validate(payload: dict, account_id: str, editing_id: str | None = None) -> 
     except (TypeError, ValueError):
         n_interrupt = 4
     n_interrupt = max(1, min(8, n_interrupt))
-    return name, desc, n_interrupt
+    return name, desc, n_interrupt, prompt_template
 
 
 def create_style(payload: dict, account_id: str = creator_store.DEFAULT_ACCOUNT_ID) -> dict:
-    name, desc, n_interrupt = _validate(payload, account_id)
+    name, desc, n_interrupt, prompt_template = _validate(payload, account_id)
     item = {"id": f"style_{uuid.uuid4().hex[:10]}", "name": name, "desc": desc,
             "n_interrupt": n_interrupt, "builtin": False,
+            "prompt_template": prompt_template,
             "created_at": time.strftime("%Y-%m-%dT%H:%M:%S")}
     items = _load_custom(account_id)
     items.append(item)
@@ -103,8 +105,9 @@ def update_style(style_id: str, payload: dict,
     target = next((s for s in items if s.get("id") == style_id), None)
     if not target:
         raise ValueError("内置风格不可编辑，或该风格不存在")
-    name, desc, n_interrupt = _validate(payload, account_id, editing_id=style_id)
-    target.update({"name": name, "desc": desc, "n_interrupt": n_interrupt})
+    name, desc, n_interrupt, prompt_template = _validate(payload, account_id, editing_id=style_id)
+    target.update({"name": name, "desc": desc, "n_interrupt": n_interrupt,
+                   "prompt_template": prompt_template})
     _save_custom(account_id, items)
     return target
 

@@ -148,6 +148,31 @@ def draft_node(s: PipelineState) -> PipelineState:
         from orchestrator.mock_llm import mock_draft
         s.draft = mock_draft(s.material or s.topic, s.minutes, s.style)
         return s
+    # 风格模板优先：自定义风格带完整提示词模板则整份使用（彻底模板化）
+    style_template = None
+    try:
+        from webapp.style_store import get_style as _get_style
+        style_template = (_get_style(s.style) or {}).get("prompt_template") or None
+    except Exception:
+        pass
+    if style_template:
+        words = int(s.minutes * 60 * 4.2)
+        try:
+            prompt = style_template.format(material=s.material or s.topic,
+                                           style_desc=s.style_desc,
+                                           words=words,
+                                           n_interruptions=s.style_n_interrupt)
+        except (KeyError, IndexError, ValueError):
+            # 模板含非占位符花括号时退回字面替换，避免任务直接失败
+            prompt = (style_template
+                      .replace("{material}", s.material or s.topic)
+                      .replace("{style_desc}", s.style_desc or "")
+                      .replace("{words}", str(words))
+                      .replace("{n_interruptions}", str(s.style_n_interrupt)))
+        s.draft = call_llm(prompt, system_editor()).text
+        if s.job:
+            s.job.llm_tokens_out += len(s.draft) // 2
+        return s
     r = call_llm(step_a_prompt(s.material, s.style, s.minutes,
                                style_desc=s.style_desc,
                                n_interruptions=s.style_n_interrupt), system_editor())

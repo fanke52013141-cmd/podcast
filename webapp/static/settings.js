@@ -82,6 +82,7 @@ function openStyleDialog(style) {
   $("styleName").value = style ? style.name : "";
   $("styleDesc").value = style ? style.desc : "";
   $("styleInterrupt").value = style ? style.n_interrupt : 4;
+  $("styleTemplate").value = style ? (style.prompt_template || "") : "";
   $("styleError").hidden = true;
   $("styleDlg").showModal();
   setTimeout(() => $("styleName").focus(), 60);
@@ -89,7 +90,8 @@ function openStyleDialog(style) {
 
 async function saveStyle() {
   const body = { name: $("styleName").value.trim(), desc: $("styleDesc").value.trim(),
-                 n_interrupt: +$("styleInterrupt").value || 4 };
+                 n_interrupt: +$("styleInterrupt").value || 4,
+                 prompt_template: $("styleTemplate").value.trim() };
   const error = $("styleError");
   if (!body.name) { error.textContent = "请填写风格名称"; error.hidden = false; return; }
   const url = editingStyleId ? `/api/styles/${editingStyleId}` : "/api/styles";

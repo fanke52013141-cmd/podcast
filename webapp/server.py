@@ -192,6 +192,7 @@ class StyleReq(BaseModel):
     name: str
     desc: str = ""
     n_interrupt: int = 4
+    prompt_template: str = ""
 
 
 @app.get("/api/styles")
@@ -516,6 +517,26 @@ def job_cover(job_id: str):
     if not p or not os.path.exists(p):
         raise HTTPException(404)
     return FileResponse(p, media_type="image/png")
+
+
+@app.get("/api/jobs/{job_id}/shownotes")
+def job_show_notes(job_id: str, dl: int = 0):
+    """Show Notes（要点摘要+时间轴）：dl=1 走下载，否则内联预览。"""
+    p = (jobmgr.get_job(job_id) or {}).get("paths", {}).get("show_notes")
+    if not p or not os.path.exists(p):
+        raise HTTPException(404, "Show Notes 尚未生成")
+    if dl:
+        return FileResponse(p, media_type="text/markdown; charset=utf-8",
+                            filename=f"{job_id}-show-notes.md")
+    return FileResponse(p, media_type="text/markdown; charset=utf-8")
+
+
+@app.post("/api/jobs/{job_id}/shownotes")
+def regen_show_notes_api(job_id: str):
+    try:
+        return jobmgr.regen_show_notes(job_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.delete("/api/jobs/{job_id}")

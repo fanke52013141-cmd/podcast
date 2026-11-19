@@ -41,6 +41,60 @@ def trace(job_id: str, event: str, **meta):
         pass
 
 
+def _generate_show_notes(job_id: str, script) -> str:
+    """Show Notes（时间轴+要点摘要）。LLM 生成要点；无账号时仅时间轴兜底。
+
+    script 可传 SoulXScript 对象或其 to_dict() 结果（meta/speakers/text）。
+    """
+    if hasattr(script, "to_dict"):
+        script = script.to_dict()
+    script = script or {}
+    turns = script.get("text", [])
+    if not turns:
+        return ""
+    import re as _re
+    meta = script.get("meta", {})
+    job = get_job(job_id) or {}
+    topic = job.get("topic") or meta.get("topic") or job_id
+    style = job.get("style") or meta.get("style", "")
+    minutes = job.get("minutes") or meta.get("target_minutes", "")
+    # 时间轴：从 SRT 读每轮起始（若有），否则按 4.2 字/秒估算
+    srt_p = JOBS_DIR / job_id / "subtitles.srt"
+    bounds = []
+    if srt_p.exists():
+        txt = srt_p.read_text(encoding="utf-8", errors="replace")
+        def _sec(t):
+            h, m, s = t.replace(",", ".").split(":")
+            return int(h) * 3600 + int(m) * 60 + float(s)
+        bounds = sorted({_sec(t) for t in _re.findall(
+            r"(\d+:\d+:\d+[,.]\d+) --> ", txt)})
+    lines_out = [f"# {topic}", "",
+                 f"> {style} · 双主播 · {minutes} 分钟".rstrip(" ·"), ""]
+    # SRT 边界数与轮数对得上才用真实时间轴，否则按字数估算
+    have_bounds = bool(bounds) and len(bounds) >= len(turns)
+    elapsed = 0.0
+    for i, (sid, t) in enumerate(turns, 1):
+        start = bounds[i - 1] if have_bounds else round(elapsed, 1)
+        stamp = f"{int(start // 60):02d}:{int(start % 60):02d}"
+        clean = _re.sub(r"<\|[^|]*\|>", "", t)
+        lines_out.append(f"- **[{stamp}] {sid}** {clean[:60]}{'…' if len(clean) > 60 else ''}")
+        elapsed += len(t) / 4.2
+    # 要点摘要（LLM 可用时）：全稿截短喂入，避免只看点开头
+    points = []
+    try:
+        from orchestrator.nodes import call_llm
+        diag_txt = "\n".join(f"- {t[:40]}" for _, t in turns)[:1600]
+        r = call_llm(f"从以下播客对话中提炼 3-5 条听众要点，每条一行，不超过 30 字：\n{diag_txt}",
+                     "你是播客编辑，只输出要点列表，不要解释。", max_retry=1)
+        points = [ln.lstrip("- •") for ln in r.text.splitlines() if ln.strip()]
+    except Exception:
+        points = []
+    lines_out += ["", "## 本期要点"]
+    for pt in points[:5]:
+        lines_out.append(f"- {pt}")
+    return "\n".join(lines_out)
+
+
 def read_traces(job_id: str = "", limit: int = 200) -> list[dict]:
     if not TRACE_FILE.exists():
         return []
@@ -238,6 +292,14 @@ def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
                  paths={**paths, "final_mp3": "", "srt": ""})
             return
         _set(job_id, status="done", step="done", paths={**paths, **_final_paths(job_id)})
+        try:                                        # Show Notes（kaikou/Podcastfy 借鉴）：要点+时间轴
+            _t1 = time.time()
+            sn = _generate_show_notes(job_id, script.to_dict())
+            if sn:
+                _set(job_id, paths={**(_final_paths(job_id)), "show_notes": str(JOBS_DIR / job_id / "show_notes.md")})
+                trace(job_id, "step_ms", step="show_notes", ms=int((time.time() - _t1) * 1000))
+        except Exception as se:
+            trace(job_id, "error", value=f"show_notes: {se}")
     except Exception as e:
         _set(job_id, status="failed", error=f"{type(e).__name__}: {e}")
 
@@ -251,6 +313,13 @@ def postprocess_job(job_id: str) -> dict:
     if not wav or not os.path.exists(wav):
         raise ValueError("音频尚未合成（等待 5080 TTS 服务）")
     script = data.get("script")
+    if not script:                              # 新任务 script 不落 job.json，从磁盘读
+        sp = (data.get("paths") or {}).get("script")
+        if sp and os.path.exists(sp):
+            try:
+                script = json.loads(Path(sp).read_text(encoding="utf-8"))
+            except Exception:
+                script = None
     if not script:
         raise ValueError("缺少脚本数据")
     _set(job_id, status="postprocessing", step="postprocess")
@@ -258,8 +327,37 @@ def postprocess_job(job_id: str) -> dict:
     paths = {**(data.get("paths") or {}), **_final_paths(job_id)}
     _set(job_id, status="done", step="done", paths=paths,
          tts_seconds=arts.get("duration_sec", data.get("tts_seconds", 0)))
+    try:                                         # Show Notes（后期重跑也刷新）
+        _t1 = time.time()
+        sn = _generate_show_notes(job_id, script)
+        if sn:
+            _set(job_id, paths={**(get_job(job_id).get("paths") or {}), "show_notes": str(JOBS_DIR / job_id / "show_notes.md")})
+            trace(job_id, "step_ms", step="show_notes", ms=int((time.time() - _t1) * 1000))
+    except Exception as se:
+        trace(job_id, "error", value=f"show_notes: {se}")
     qc_job(job_id)                               # P3-1 骨架：后期完成顺带质检
     return arts
+
+
+def regen_show_notes(job_id: str) -> dict:
+    """手动（重）生成 Show Notes —— 兼容功能上线前的存量 done 任务。"""
+    data = get_job(job_id)
+    if not data:
+        raise ValueError("任务不存在")
+    sp = (data.get("paths") or {}).get("script")
+    script = None
+    if sp and os.path.exists(sp):
+        try:
+            script = json.loads(Path(sp).read_text(encoding="utf-8"))
+        except Exception:
+            script = None
+    sn = _generate_show_notes(job_id, script or {})
+    if not sn:
+        raise ValueError("缺少脚本数据，无法生成 Show Notes")
+    out = JOBS_DIR / job_id / "show_notes.md"
+    out.write_text(sn, encoding="utf-8")
+    _set(job_id, paths={**(data.get("paths") or {}), "show_notes": str(out)})
+    return {"path": str(out)}
 
 
 def qc_job(job_id: str) -> dict:
@@ -311,6 +409,13 @@ def edit_job(job_id: str, trim_start=None, trim_end=None,
     if not wav or not os.path.exists(wav):
         raise ValueError("音频尚未合成（等待 5080 TTS 服务）")
     script = data.get("script")
+    if not script:                              # 新任务 script 不落 job.json，从磁盘读
+        sp = (data.get("paths") or {}).get("script")
+        if sp and os.path.exists(sp):
+            try:
+                script = json.loads(Path(sp).read_text(encoding="utf-8"))
+            except Exception:
+                script = None
     if not script:
         raise ValueError("缺少脚本数据")
     from postprocess.edit import edit

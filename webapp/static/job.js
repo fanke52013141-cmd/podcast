@@ -9,7 +9,7 @@ let job = null;
 
 async function init() {
   await load();
-  renderStepper(); renderTurns(); renderPlayer(); setupEdit(); setupSfx();
+  renderStepper(); renderTurns(); renderPlayer(); setupEdit(); setupSfx(); setupShowNotes();
   subscribe();
   // 后期开关持久化
   for (const k of ["swBgm", "swSrt", "swWm"]) {
@@ -437,6 +437,57 @@ function applySfxData(d) {
     $("btnSfxDl").hidden = false;
     $("btnSfxDl").href = `/api/jobs/${JID}/sfx-audio`;
   }
+}
+
+// ---------- Show Notes（要点摘要+时间轴） ----------
+function renderSnMd(md) {
+  // 轻量渲染：标题 / 引言 / 加粗（内容来自自家模板与 LLM，先转义再替换）
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return md.split("\n").map(raw => {
+    const l = esc(raw);
+    if (l.startsWith("# ")) return `<h4 style="margin:0 0 8px;font-size:17px">${l.slice(2)}</h4>`;
+    if (l.startsWith("> ")) return `<div style="color:var(--txt2);font-size:13px;margin-bottom:10px">${l.slice(2)}</div>`;
+    if (l.startsWith("## ")) return `<div style="font-weight:700;margin:14px 0 6px;font-size:14px">${l.slice(3)}</div>`;
+    const rich = l.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    if (rich.startsWith("- ")) return `<div style="margin:3px 0">${rich.slice(2)}</div>`;
+    return rich.trim() ? `<div style="margin:3px 0">${rich}</div>` : "<div style='height:6px'></div>";
+  }).join("");
+}
+
+async function setupShowNotes() {
+  const card = $("snCard"), body = $("snBody"), dl = $("btnSnDl"), regen = $("btnSnRegen");
+  if (!card) return;
+  const has = !!(job.paths || {}).show_notes;
+  if (has) {
+    try {
+      const r = await fetch(`/api/jobs/${JID}/shownotes`);
+      if (r.ok) body.innerHTML = renderSnMd(await r.text());
+      dl.hidden = false;
+      dl.href = `/api/jobs/${JID}/shownotes?dl=1`;
+    } catch (e) { /* 预览失败仍可下载 */ }
+    regen.textContent = "重新生成";
+    regen.hidden = false;
+    card.hidden = false;
+  } else if (job.status === "done") {
+    // 存量 done 任务：给一键补生成入口
+    body.textContent = "尚未生成 Show Notes（要点摘要 + 时间轴）。";
+    regen.textContent = "生成 Show Notes";
+    regen.hidden = false;
+    card.hidden = false;
+  } else return;
+  regen.onclick = async () => {
+    regen.disabled = true; regen.textContent = "生成中…";
+    try {
+      const r = await fetch(`/api/jobs/${JID}/shownotes`, { method: "POST" });
+      if (!r.ok) throw new Error((await r.json()).detail || "生成失败");
+      const rr = await fetch(`/api/jobs/${JID}/shownotes`);
+      if (rr.ok) body.innerHTML = renderSnMd(await rr.text());
+      dl.hidden = false; dl.href = `/api/jobs/${JID}/shownotes?dl=1`;
+      regen.textContent = "重新生成";
+      toast("Show Notes 已生成");
+    } catch (e) { toast("Show Notes 失败: " + e.message); regen.textContent = "生成 Show Notes"; }
+    regen.disabled = false;
+  };
 }
 
 // ---------- toast ----------
