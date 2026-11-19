@@ -918,6 +918,43 @@ async def upload_voice_audio(vid: str, file: UploadFile = File(...)):
         raise HTTPException(404, str(e))
 
 
+@app.post("/api/voices/design")
+def voice_design_ep(payload: dict):
+    """AI 音色设计：MiniMax voice_design + 自动转正持久音色 + 入库 + 试听落盘。"""
+    import time as _t
+    from tts_service import minimax_engine as mx
+    from webapp import voice_store
+    prompt = (payload or {}).get("prompt", "").strip()
+    if not prompt:
+        raise HTTPException(400, "音色描述不能为空")
+    t0 = _t.time()
+    try:
+        permanent_id, trial = mx.design_voice(
+            prompt, (payload or {}).get("preview_text",
+                     "欢迎收听我们的节目，希望今天的分享对你有启发。"))
+    except Exception as e:
+        raise HTTPException(502, str(e))
+    rel = voice_store.save_trial_audio(permanent_id, trial,
+                                       name=payload.get("name", ""))
+    entry = voice_store.find_by_minimax(permanent_id)
+    if not entry:
+        entry = voice_store.create({
+            "id": "vd_" + re.sub(r"[^A-Za-z0-9]", "", permanent_id)[:10].lower(),
+            "name": payload.get("name") or f"AI设计·{permanent_id[:8]}",
+            "gender": payload.get("gender", "female"),
+            "style_tags": ["AI设计"],
+            "source": "minimax_designed",
+            "license_status": "generated",
+            "prompt_audio": rel,
+            "prompt_text": payload.get("preview_text", ""),
+        })
+    engines = entry.get("engines") or {}
+    engines["minimax"] = {"voice_id": permanent_id}
+    voice_store.update_engines(entry["id"], engines)
+    return {"ok": True, "voice": entry, "voice_id": permanent_id,
+            "trial": rel, "elapsed_sec": round(_t.time() - t0, 1)}
+
+
 @app.get("/api/voices/{vid}/audio")
 def voice_audio(vid: str):
     from webapp import voice_store

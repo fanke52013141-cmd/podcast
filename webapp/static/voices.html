@@ -36,11 +36,38 @@
     <button class="primary" id="btnDesign">AI 设计新音色</button>
   </section>
 
+  <details class="card" style="padding:16px 20px;margin-bottom:16px">
+    <summary style="cursor:pointer;color:var(--txt);font-weight:600">参考音频规范（录之前必读——直接决定克隆质量）</summary>
+    <div style="margin-top:10px;font-size:13px;line-height:1.9;color:#30343A">
+      <b>时长：10-14 秒最优，15 秒是硬上限</b>——不是越长越好，超长部分被截断且无增益<br>
+      <b>说什么风格的内容，就用什么讲法录</b>——模型会模仿参考的语气语速，做科普就用讲解腔<br>
+      单人说话 · 无 BGM · 无混响 · 手机降噪/自动增益全部关闭<br>
+      先空录 5 秒量底噪（底噪越低越好），人声要比底噪高 22dB 以上<br>
+      结尾干净地停在一个字上，后面留 0.2 秒；上传时逐字稿必须与录音一字不差<br>
+      <span style="color:#676D76">分场景录（讲解/聊天/讲故事各录一段）效果更稳，按节目类型选用</span>
+    </div>
+  </details>
   <section class="vgrid" id="grid"></section>
 </main>
 
 <audio id="player" preload="none" hidden></audio>
 
+<dialog id="designDlg" style="max-width:520px;width:92vw">
+  <div class="dlg-head"><h3>AI 设计新音色</h3>
+    <button class="ghost" onclick="document.getElementById('designDlg').close()">关闭</button></div>
+  <div class="field-label">音色描述（越具体越好：性别/年龄/语速/风格/适用节目）</div>
+  <textarea id="dgPrompt" rows="3" placeholder="例：温柔知性的年轻女声，语速偏慢，吐字清晰温润，适合深夜电台"></textarea>
+  <div class="field-label" style="margin-top:8px">试听文本（用这段话试听效果）</div>
+  <textarea id="dgPreview" rows="2">夜色渐深，欢迎回到我们的节目，今晚我们慢慢聊。</textarea>
+  <div class="frow" style="margin-top:8px">
+    <div><div class="field-label">音色名称</div><input id="dgDName" placeholder="深夜知性·女"></div>
+    <div><div class="field-label">性别</div>
+      <select id="dgDGender"><option value="female">女</option><option value="male">男</option></select></div>
+  </div>
+  <div class="small" style="color:#676D76;line-height:1.7">MiniMax 设计 + 自动转正为长期音色，全程约 25 秒，成本几分钱。设计完成自动入库并播放试听。</div>
+  <div class="actionbar" style="position:static;margin-top:12px">
+    <span></span><button class="primary" id="dgDesignGo">开始设计</button></div>
+</dialog>
 <dialog id="editDlg">
   <div class="dlg-head"><h3 id="dgTitle">编辑音色</h3>
     <button class="ghost" onclick="document.getElementById('editDlg').close()">关闭</button></div>
@@ -60,9 +87,9 @@
       <select id="dgSource"><option value="self_recorded">自录</option><option value="public">公开素材</option><option value="voicegen">AI造音</option></select></div></div>
   <div class="field-label">参考音频转写（克隆必需，逐字）</div>
   <textarea id="dgPromptText" rows="2" placeholder="参考音频里的每一个字…"></textarea>
-  <div class="frow" style="margin-top:10px">
-    <div class="grow"><div class="field-label">参考音频（5-10 秒 wav/mp3）</div>
-      <input type="file" id="dgAudio" accept=".wav,.mp3,.m4a"></div>
+  <div class="field-label" style="margin-top:10px">参考音频（<b>10-14 秒最优，15 秒硬上限</b>，wav/mp3；单人、无噪音、风格匹配节目）</div>
+  <div class="frow" style="margin-top:6px">
+    <div class="grow"><input type="file" id="dgAudio" accept=".wav,.mp3,.m4a"></div>
     <div style="align-self:flex-end"><button class="ghost" id="dgUpload">上传</button></div>
   </div>
   <div class="actionbar" style="position:static;margin-top:14px">

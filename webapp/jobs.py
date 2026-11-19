@@ -208,8 +208,14 @@ def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
         meta = client.synthesize(script.to_dict(), on_progress=_on_synth,
                                  engine=tts_engine)
         trace(job_id, "step_ms", step="synthesize", ms=int((time.time() - t0) * 1000))
+        wav_path = meta.get("wav_path", "")
+        # TTS 在 WSL 时返回 /mnt/d/... 路径，转成 Windows 路径供后期链使用
+        import re as _re
+        m = _re.match(r"^/mnt/([a-zA-Z])/(.*)$", wav_path)
+        if m:
+            wav_path = f"{m.group(1).upper()}:/{m.group(2)}"
         paths = {"dir": str(JOBS_DIR / job_id), "script": str(sf),
-                 "wav": meta.get("wav_path", "")}
+                 "wav": wav_path}
         _set(job_id, paths=paths, tts_seconds=meta.get("duration_sec", 0))
         try:
             t0 = time.time()

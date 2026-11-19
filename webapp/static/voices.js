@@ -6,8 +6,37 @@ let cur = null, editing = null;                 // editing: null=新建, 否则 
 async function init() {
   await refresh();
   $("q").addEventListener("input", render);
-  $("btnDesign").addEventListener("click", () =>
-    toast("AI 音色设计将在 P3-2 接入 MOSS-VoiceGenerator 后开放"));
+  $("btnDesign").addEventListener("click", () => {
+    $("dgPrompt").value = ""; $("dgDName").value = ""; $("dgDGender").value = "female";
+    $("dgDesignGo").textContent = "开始设计"; $("dgDesignGo").disabled = false;
+    $("designDlg").showModal();
+  });
+  $("dgDesignGo").addEventListener("click", async () => {
+    const prompt = $("dgPrompt").value.trim();
+    if (!prompt) return toast("请先填写音色描述");
+    const btn = $("dgDesignGo");
+    btn.disabled = true; btn.textContent = "设计中…约 25 秒";
+    try {
+      const r = await fetch("/api/voices/design", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt,
+          preview_text: $("dgPreview").value.trim() || undefined,
+          name: $("dgDName").value.trim() || undefined,
+          gender: $("dgDGender").value }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.detail || "设计失败");
+      $("designDlg").close();
+      await refresh();
+      // 自动播放新音色试听
+      const au = $("player"); au.src = `/api/voices/${d.voice.id}/audio`;
+      au.play().catch(() => {});
+      toast(`设计完成：${d.voice.name}（已入库，可直接设为主持/搭档）`);
+    } catch (e) {
+      toast("设计失败: " + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = "开始设计";
+    }
+  });
   $("btnNewVoice").addEventListener("click", () => openEdit(null));
   $("dgSave").addEventListener("click", saveVoice);
   $("dgDelete").addEventListener("click", deleteVoice);

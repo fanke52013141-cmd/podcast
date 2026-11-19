@@ -276,6 +276,28 @@
           "voice_id": "ttv-voice-2026111800394026-I5aE06zg"
         }
       }
+    },
+    {
+      "id": "vd_pd0126mzzd",
+      "name": "纪录片旁白·男",
+      "gender": "male",
+      "age_range": "26-32",
+      "style_tags": [
+        "AI设计"
+      ],
+      "language": "zh",
+      "speed_feel": "normal",
+      "license_status": "generated",
+      "source": "minimax_designed",
+      "prompt_audio": "voice_lib/audio/trial_pd-0126mZzD8WIFb6ndn1d2xl.mp3",
+      "prompt_text": "欢迎收听我们的节目，今天我们聊一聊声音背后的技术。",
+      "persona_name": "",
+      "aliases": [],
+      "engines": {
+        "minimax": {
+          "voice_id": "pd-0126mZzD8WIFb6ndn1d2xl"
+        }
+      }
     }
   ]
 }
