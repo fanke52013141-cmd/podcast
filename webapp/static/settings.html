@@ -4,30 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>设置 · AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.19">
-<link rel="stylesheet" href="/static/duo.css?v=0.19">
-<link rel="stylesheet" href="/static/final.css?v=0.19">
-<link rel="stylesheet" href="/static/dropdown.css?v=0.19">
-<script src="/static/dropdown.js?v=0.19" defer></script>
-<link rel="stylesheet" href="/static/warm.css?v=0.19">
-<script src="/static/creator.js?v=0.19" defer></script>
+<link rel="stylesheet" href="/static/style.css?v=0.20">
+<link rel="stylesheet" href="/static/duo.css?v=0.20">
+<link rel="stylesheet" href="/static/final.css?v=0.20">
+<link rel="stylesheet" href="/static/dropdown.css?v=0.20">
+<script src="/static/dropdown.js?v=0.20" defer></script>
+<link rel="stylesheet" href="/static/warm.css?v=0.20">
+<script src="/static/creator.js?v=0.20" defer></script>
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a href="/voices?v=0.19">音色库</a>
-    <a href="/tasks?v=0.19">任务中心</a>
-    <a class="active" href="/settings?v=0.19">设置</a>
-    <a href="/logs?v=0.19">日志</a>
+    <a href="/voices?v=0.20">音色库</a>
+    <a href="/tasks?v=0.20">任务中心</a>
+    <a class="active" href="/settings?v=0.20">设置</a>
+    <a href="/logs?v=0.20">日志</a>
   </nav>
 </header>
 
 <main class="setwrap">
   <aside class="setnav card">
     <a href="#secLlm" class="on">写稿引擎</a>
-    <a href="#secAgent">Deep Agent 技能</a>
     <a href="#secTts">语音合成</a>
     <a href="#secStyles">对话风格</a>
     <a href="#secDefaults">任务默认值</a>
@@ -59,29 +58,7 @@
       </div>
     </section>
 
-    <!-- ② Deep Agent 技能 -->
-    <section class="card setcard" id="secAgent">
-      <div class="setsec-head">
-        <div>
-          <h2>Deep Agent 技能</h2>
-          <p class="setsec-desc">内置工具技能随写稿 Agent 自动调用；上传 Markdown 技能手册后，会按当前创作账号注入写稿指令。</p>
-        </div>
-        <div class="skill-upload">
-          <input type="file" id="skillFile" accept=".md,.txt" hidden>
-          <button class="primary" id="btnUploadSkill">上传 Skill 手册</button>
-        </div>
-      </div>
-      <div class="skill-section">
-        <div class="skill-subtitle">内置工具</div>
-        <div id="skillBuiltin" class="skill-chips"></div>
-      </div>
-      <div class="skill-section">
-        <div class="skill-subtitle">本账号技能手册</div>
-        <div id="skillCustom" class="skill-list"></div>
-      </div>
-    </section>
-
-    <!-- ③ 语音合成 -->
+    <!-- ② 语音合成 -->
     <section class="card setcard" id="secTts">
       <h2>语音合成</h2>
       <div class="frow">
@@ -244,6 +221,6 @@
   </div>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/settings.js?v=0.19"></script>
+<script src="/static/settings.js?v=0.20"></script>
 </body>
 </html>

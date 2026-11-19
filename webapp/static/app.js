@@ -32,7 +32,6 @@ async function init() {
     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) createJob();
   });
   refreshTasks(); setInterval(refreshTasks, 2500);
-  setupRss();
   setupTemplates();
   document.querySelectorAll("[data-soon]").forEach(a =>
     a.addEventListener("click", e => { e.preventDefault(); alert("该页面在 UI-4/UI-5 迭代中"); }));
@@ -87,44 +86,7 @@ function renderTplOptions() {
   window.fancySync && window.fancySync();
 }
 
-// ---------- RSS 批量（P1-14） ----------
-function setupRss() {
-  let previewItems = [];
-  $("rssPreview").addEventListener("click", async () => {
-    const url = $("rssUrl").value.trim();
-    if (!url) return toastMsg("请先粘贴 RSS 地址");
-    $("rssItems").textContent = "解析中…";
-    try {
-      const r = await (await fetch("/api/rss/preview", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, limit: +$("rssLimit").value })
-      })).json();
-      if (r.detail) throw new Error(r.detail);
-      previewItems = r.items || [];
-      $("rssItems").innerHTML = `<b>${escapeHtml(r.feed_title || "")}</b><br>` +
-        previewItems.map((it, i) => `${i + 1}. ${escapeHtml(it.title)}`).join("<br>");
-      $("rssBatch").hidden = !previewItems.length;
-    } catch (e) { $("rssItems").textContent = "解析失败: " + e.message; }
-  });
-  $("rssBatch").addEventListener("click", async () => {
-    const url = $("rssUrl").value.trim();
-    $("rssBatch").disabled = true; $("rssBatch").textContent = "创建中…";
-    try {
-      const r = await (await fetch("/api/jobs/batch", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, limit: +$("rssLimit").value,
-          style: curStyle, minutes: +$("minutes").value,
-          provider: $("provider").value,
-          host_voice: $("hostVoice").value, partner_voice: $("partnerVoice").value,
-          bgm: curTpl?.bgm || "" })
-      })).json();
-      if (r.detail) throw new Error(r.detail);
-      toastMsg(`已创建 ${r.count} 个任务（排队生成中）`);
-      refreshTasks();
-    } catch (e) { toastMsg("批量创建失败: " + e.message); }
-    finally { $("rssBatch").disabled = false; $("rssBatch").textContent = "批量生成"; }
-  });
-}
+// ---------- RSS 批量（P1-14，已下线） ----------
 function toastMsg(msg) {                         // 工作台轻提示（无 toast 元素时退化为 badge）
   const el = document.getElementById("createErr");
   el.textContent = msg; el.hidden = false; el.style.color = "var(--green)";

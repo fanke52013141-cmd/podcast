@@ -30,7 +30,26 @@
     wrap.appendChild(btn);
     wrap.appendChild(menu);
 
-    const open = () => { wrap.classList.add("open"); };
+    // 打开时用 fixed 定位：逃出 overflow:hidden 祖先（卡片裁切根因），并按视口空间翻转
+    const position = () => {
+      if (!wrap.classList.contains("open")) return;
+      const r = btn.getBoundingClientRect();
+      menu.style.position = "fixed";
+      menu.style.left = `${r.left}px`;
+      menu.style.width = `${r.width}px`;
+      const below = window.innerHeight - r.bottom - 12;
+      const above = r.top - 12;
+      const natural = menu.scrollHeight + 16;        // 含上下 padding 8+8
+      const want = Math.min(natural, 260);
+      if (below >= want || below >= above) {          // 下方放得下（或下方空间更大）：向下展开
+        menu.style.top = `${r.bottom + 6}px`;
+        menu.style.maxHeight = `${Math.max(140, Math.min(260, below))}px`;
+      } else {                                        // 下方空间不足：向上翻转
+        menu.style.top = `${Math.max(8, r.top - 6 - Math.min(natural, above))}px`;
+        menu.style.maxHeight = `${Math.max(140, Math.min(260, above))}px`;
+      }
+    };
+    const open = () => { wrap.classList.add("open"); position(); };
     const close = () => { wrap.classList.remove("open"); };
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -38,6 +57,8 @@
       wrap.classList.contains("open") ? close() : open();
     });
     document.addEventListener("click", close);
+    window.addEventListener("scroll", position, { passive: true });
+    window.addEventListener("resize", position);
 
     // 原生 select 变化（程序赋值）时同步显示
     sel.addEventListener("change", () => {

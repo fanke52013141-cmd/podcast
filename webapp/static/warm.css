@@ -36,9 +36,10 @@ a{color:inherit}
   background:#ffedd5;border-radius:999px;padding:4px 6px}
 .topbar nav{display:flex;align-items:center;justify-content:center;gap:30px;flex:1;height:100%}
 .topbar nav a{position:relative;display:flex;align-items:center;height:100%;padding:0 1px;border:0;
-  color:#78716c;font-size:14px;font-weight:500;text-decoration:none;white-space:nowrap}
+  color:#78716c;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
 .topbar nav a:hover{color:#292524}
-.topbar nav a.active{color:var(--amber-deep);font-weight:650;border:0}
+/* 激活态只变颜色+下划线，字重保持一致，避免文字宽度变化导致整排 tab 位移 */
+.topbar nav a.active{color:var(--amber-deep);border:0}
 .topbar nav a.active::after{content:"";position:absolute;left:0;right:0;bottom:11px;height:2px;border-radius:2px;background:var(--amber-deep)}
 
 /* 创作账号 */
@@ -101,7 +102,7 @@ a{color:inherit}
 .card h3{color:#44403c}
 .create{padding:28px;overflow:hidden}
 .create .tplrow{display:flex;align-items:center;gap:9px;margin-bottom:18px;min-height:38px}
-.tplrow .small{height:38px;display:flex;align-items:center;gap:10px;color:#57534e;font-size:13px;font-weight:550}
+.tplrow .small{height:38px;display:flex;align-items:center;gap:10px;color:#57534e;font-size:13px;font-weight:550;white-space:nowrap}
 .tplrow select{min-width:185px}
 textarea,.frow input,.frow select,.row select,.vsearch input,.rssrow input,.erow input,.erow select,
 .keyrow input,.pctrl select,.tplrow select,.rssrow select,.setnav select,.thead select,

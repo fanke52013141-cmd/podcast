@@ -1,4 +1,4 @@
-/* 设置页交互 —— 读写 /api/settings + 测试连接/探活 + 风格/Skill 管理 */
+/* 设置页交互 —— 读写 /api/settings + 测试连接/探活 + 对话风格管理 */
 const $ = (id) => document.getElementById(id);
 const PARALING_NAME = { laughter: "笑声", sigh: "叹气", breathing: "呼吸", coughing: "咳嗽", throat_clearing: "清嗓" };
 let voices = [];
@@ -9,7 +9,6 @@ async function init() {
   await loadStyles();
   await loadSettings();
   bind();
-  await loadSkills();
   await setupQueue();
   // 左侧导航高亮：点击立即选中；滚动时按分区位置高亮（页面触底时选中最后一项）
   const links = [...document.querySelectorAll(".setnav a")];
@@ -116,36 +115,6 @@ async function deleteStyle(id) {
   await loadSettings();
 }
 
-async function loadSkills() {
-  let data = { builtin: [], custom: [] };
-  try { data = await (await fetch("/api/agent-skills")).json(); } catch {}
-  $("skillBuiltin").innerHTML = (data.builtin || []).map(s => `
-    <div class="skill-chip" title="${escapeHtml(s.desc)}">
-      <span class="skill-chip-dot"></span>
-      <span>${escapeHtml(s.label)}</span>
-      <small>${escapeHtml(s.name)}</small>
-    </div>`).join("") || `<span class="small">内置工具未加载</span>`;
-  const custom = data.custom || [];
-  $("skillCustom").innerHTML = custom.length ? custom.map(s => `
-    <div class="skill-row">
-      <div class="skill-row-icon">MD</div>
-      <div class="skill-row-main">
-        <div class="skill-row-name">${escapeHtml(s.name)}</div>
-        <div class="skill-row-meta">${s.size < 1024 ? `${s.size || 0} B` : `${((s.size || 0) / 1024).toFixed(1)} KB`} · ${escapeHtml((s.created_at || "").replace("T", " ").replace(/-/g, "."))}</div>
-      </div>
-      <button class="ghost danger skill-del" data-skill-id="${escapeHtml(s.id)}">移除</button>
-    </div>`).join("") : `<div class="skill-empty">还没有上传技能手册。支持 .md / .txt，内容会注入当前账号的写稿 Agent。</div>`;
-  $("skillCustom").querySelectorAll(".skill-del").forEach(btn =>
-    btn.addEventListener("click", async () => {
-      if (!confirm(`移除技能手册「${btn.closest(".skill-row").querySelector(".skill-row-name").textContent}」？`)) return;
-      const r = await fetch(`/api/agent-skills/${encodeURIComponent(btn.dataset.skillId)}`, { method: "DELETE" });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) return toast(d.detail || "移除失败");
-      toast("技能手册已移除");
-      loadSkills();
-    }));
-}
-
 async function loadSettings() {
   const s = await (await fetch("/api/settings")).json();
   // ① 写稿引擎
@@ -192,24 +161,6 @@ function bind() {
     if (e.target === $("styleDlg")) $("styleDlg").close();
   });
   $("styleSave").addEventListener("click", saveStyle);
-  $("btnUploadSkill").addEventListener("click", () => $("skillFile").click());
-  $("skillFile").addEventListener("change", async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const button = $("btnUploadSkill");
-    button.disabled = true; button.textContent = "上传中…";
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const r = await fetch("/api/agent-skills", { method: "POST", body: form });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) toast(data.detail || "上传失败");
-      else { toast(`技能「${data.name}」已上传`); await loadSkills(); }
-    } finally {
-      button.disabled = false; button.textContent = "上传 Skill 手册";
-      e.target.value = "";
-    }
-  });
   $("sTemp").addEventListener("input", e => $("tempVal").textContent = (e.target.value / 10).toFixed(1));
   $("sSeg").addEventListener("input", e => $("segVal").textContent = `${e.target.value} 分钟/段`);
   $("sMinutes").addEventListener("input", e => $("dminVal").textContent = `${e.target.value} 分钟`);

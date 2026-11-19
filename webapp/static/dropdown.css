@@ -7,9 +7,13 @@
 .fancy-trigger::after{content:"";position:absolute;right:12px;top:50%;width:9px;height:9px;
   border-right:1.5px solid #676D76;border-bottom:1.5px solid #676D76;
   transform:translateY(-70%) rotate(45deg)}
-.fancy-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;
+.fancy-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:90;
   background:#fff;border:1px solid #E6E3DD;border-radius:12px;padding:8px 0;
-  box-shadow:0 6px 20px rgba(48,52,58,.08);max-height:260px;overflow:auto}
+  box-shadow:0 6px 20px rgba(48,52,58,.12);max-height:260px;overflow:auto;
+  scrollbar-width:thin;scrollbar-color:#d9d2c7 transparent}
+.fancy-menu::-webkit-scrollbar{width:6px}
+.fancy-menu::-webkit-scrollbar-thumb{background:#d9d2c7;border-radius:3px}
+.fancy-menu::-webkit-scrollbar-track{background:transparent}
 .fancy-select.open .fancy-menu{display:block}
 .fancy-option{display:flex;align-items:center;justify-content:space-between;
   min-height:36px;padding:0 14px;font-size:13px;color:var(--txt);cursor:pointer}

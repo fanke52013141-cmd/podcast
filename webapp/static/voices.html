@@ -4,30 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>音色库 · AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.18">
-<link rel="stylesheet" href="/static/duo.css?v=0.18">
-<link rel="stylesheet" href="/static/final.css?v=0.18">
-<link rel="stylesheet" href="/static/dropdown.css?v=0.18">
-<script src="/static/dropdown.js?v=0.18" defer></script>
-<link rel="stylesheet" href="/static/warm.css?v=0.18">
-<script src="/static/creator.js?v=0.18" defer></script>
+<link rel="stylesheet" href="/static/style.css?v=0.20">
+<link rel="stylesheet" href="/static/duo.css?v=0.20">
+<link rel="stylesheet" href="/static/final.css?v=0.20">
+<link rel="stylesheet" href="/static/dropdown.css?v=0.20">
+<script src="/static/dropdown.js?v=0.20" defer></script>
+<link rel="stylesheet" href="/static/warm.css?v=0.20">
+<script src="/static/creator.js?v=0.20" defer></script>
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a class="active" href="/voices?v=0.18">音色库</a>
-    <a href="/tasks?v=0.18">任务中心</a>
-    <a href="/settings?v=0.18">设置</a>
-    <a href="/logs?v=0.18">日志</a>
+    <a class="active" href="/voices?v=0.20">音色库</a>
+    <a href="/tasks?v=0.20">任务中心</a>
+    <a href="/settings?v=0.20">设置</a>
+    <a href="/logs?v=0.20">日志</a>
   </nav>
 </header>
 
 <main class="vwrap">
   <div class="vhero">
     <h1>音色库</h1>
-    <p class="lead">共（<b id="vCount">0</b>）个音色</p>
   </div>
 
   <section class="card vsearch">
@@ -36,17 +35,6 @@
     <button class="primary" id="btnDesign">AI 设计新音色</button>
   </section>
 
-  <details class="card" style="padding:16px 20px;margin-bottom:16px">
-    <summary style="cursor:pointer;color:var(--txt);font-weight:600">参考音频规范（录之前必读——直接决定克隆质量）</summary>
-    <div style="margin-top:10px;font-size:13px;line-height:1.9;color:#30343A">
-      <b>时长：10-14 秒最优，15 秒是硬上限</b>——不是越长越好，超长部分被截断且无增益<br>
-      <b>说什么风格的内容，就用什么讲法录</b>——模型会模仿参考的语气语速，做科普就用讲解腔<br>
-      单人说话 · 无 BGM · 无混响 · 手机降噪/自动增益全部关闭<br>
-      先空录 5 秒量底噪（底噪越低越好），人声要比底噪高 22dB 以上<br>
-      结尾干净地停在一个字上，后面留 0.2 秒；上传时逐字稿必须与录音一字不差<br>
-      <span style="color:#676D76">分场景录（讲解/聊天/讲故事各录一段）效果更稳，按节目类型选用</span>
-    </div>
-  </details>
   <section class="vgrid" id="grid"></section>
 </main>
 
@@ -64,7 +52,7 @@
     <div><div class="field-label">性别</div>
       <select id="dgDGender"><option value="female">女</option><option value="male">男</option></select></div>
   </div>
-  <div class="small" style="color:#676D76;line-height:1.7">MiniMax 设计 + 自动转正为长期音色，全程约 25 秒，成本几分钱。设计完成自动入库并播放试听。</div>
+  <div class="small" style="color:#676D76;line-height:1.7">提示：描述越具体效果越稳（性别 / 年龄 / 语速 / 风格 / 适用的节目场景）。MiniMax 设计 + 自动转正为长期音色，全程约 25 秒，成本几分钱。</div>
   <div class="actionbar" style="position:static;margin-top:12px">
     <span></span><button class="primary" id="dgDesignGo">开始设计</button></div>
 </dialog>
@@ -99,6 +87,6 @@
 </dialog>
 
 <div id="toast" class="toast" hidden></div>
-<script src="/static/voices.js?v=0.18"></script>
+<script src="/static/voices.js?v=0.20"></script>
 </body>
 </html>

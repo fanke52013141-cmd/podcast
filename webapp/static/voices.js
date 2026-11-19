@@ -58,7 +58,6 @@ function render() {
     [v.name, v.gender === "female" ? "女" : "男", v.persona_name, ...(v.style_tags || [])]
       .join(" ").toLowerCase().includes(q);
   const list = voices.filter(hit);
-  $("vCount").textContent = list.length;
   const HUES = [28, 205, 160, 350, 262, 96, 18, 232];   // 精选柔和色板
   $("grid").innerHTML = list.length ? list.map((v, i) => {
     const h = HUES[i % HUES.length];
