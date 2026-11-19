@@ -63,7 +63,7 @@ def build_t2a_body(text: str, voice_id: str, *, speed: float = 1.0,
                    vol: float = 1.0, pitch: int = 0,
                    sample_rate: int = 32000, format_: str = "mp3",
                    bitrate: int = 128000, channel: int = 1,
-                   aigc_watermark: bool = True,
+                   aigc_watermark: bool = False,
                    english_normalization: bool = True) -> dict:
     """同步 t2a_v2 请求体。voice_setting.voice_id 必填（上游硬校验）。"""
     if not (text or "").strip():
@@ -286,7 +286,8 @@ def _probe_duration(wav: str) -> float:
 
 
 def _turn_cache_key(text: str, voice_id: str, seed: int) -> str:
-    raw = json.dumps({"t": text, "v": voice_id, "m": MODEL, "e": "minimax", "s": seed},
+    raw = json.dumps({"t": text, "v": voice_id, "m": MODEL, "e": "minimax",
+                      "s": seed, "wm": False},   # wm 进键：关水印后旧缓存不误用
                      ensure_ascii=False, sort_keys=True)
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
