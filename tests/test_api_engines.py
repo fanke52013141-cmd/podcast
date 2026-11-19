@@ -243,8 +243,8 @@ def main():
        "本地参考音音色支持 soulx")
     ok("doubao" in voice_store.supported_engines(voice_store.get("v01_female_warm")),
        "本地参考音音色支持 doubao（零样本）")
-    ok("minimax" not in voice_store.supported_engines(voice_store.get("v01_female_warm")),
-       "未复刻音色不支持 minimax")
+    ok("minimax" in voice_store.supported_engines(voice_store.get("v01_female_warm")),
+       "未复刻音色可回落 MiniMax 系统默认音色")
     fake = {"id": "vx", "name": "x", "gender": "female", "age_range": "1",
             "style_tags": [], "prompt_audio": "voice_lib/audio/v01_female_warm.wav",
             "prompt_text": "", "engines": {"minimax": {"voice_id": "vd_12345678"}}}

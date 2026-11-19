@@ -13,6 +13,7 @@ from contracts.models import Job, SoulXScript, load_voice_manifest
 from orchestrator.nodes import (PipelineState, research_node, draft_node,
                                 rewrite_node, validate_node)
 from orchestrator.validators import build_script
+from webapp import style_store, skill_store
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 JOBS_DIR = BASE_DIR / "jobs"
@@ -60,13 +61,19 @@ def read_traces(job_id: str = "", limit: int = 200) -> list[dict]:
 
 def create_job(topic: str, style: str, minutes: int, material: str = "",
                provider: str = "mock", voice_map: dict | None = None,
-               tts_url: str = "", bgm: str = "", tts_engine: str = "") -> dict:
+               tts_url: str = "", bgm: str = "", tts_engine: str = "",
+               creator_account_id: str = "default") -> dict:
     job = Job(topic=topic, style=style, minutes=minutes, provider=provider)
     job_dir = JOBS_DIR / job.job_id
     job_dir.mkdir(exist_ok=True)
     job.paths = {"dir": str(job_dir)}
     _dump(job)
-    _set(job.job_id, bgm=bgm)                       # 模板指定的 BGM（空=按风格自动）
+    style_conf = style_store.get_style(style, account_id=creator_account_id)
+    skill_notes = skill_store.prompt_block(creator_account_id)
+    _set(job.job_id, bgm=bgm, creator_account_id=creator_account_id,
+         style_desc=style_conf.get("desc", ""),
+         style_n_interrupt=style_conf.get("n_interrupt", 4),
+         skill_notes=skill_notes)
     try:                                    # 封面生成失败不阻塞任务（P2-8）
         from postprocess.cover import generate
         cover = generate(topic, style, minutes, job_dir / "cover.png")
@@ -77,16 +84,19 @@ def create_job(topic: str, style: str, minutes: int, material: str = "",
                  provider, voice_map or {"S1": "v01_female_warm",
                                          "S2": "v02_male_deep"}, tts_url, bgm,
                  tts_engine)
-    return {"job_id": job.job_id, "status": job.status}
+    return {"job_id": job.job_id, "status": job.status,
+            "creator_account_id": creator_account_id}
 
 
-def list_jobs() -> list[dict]:
+def list_jobs(creator_account_id: str = "default") -> list[dict]:
     out = []
     for d in sorted(JOBS_DIR.iterdir(), reverse=True):
         jf = d / "job.json"
         if jf.exists():
             try:
                 j = json.loads(jf.read_text(encoding="utf-8"))
+                if j.get("creator_account_id", "default") != creator_account_id:
+                    continue
                 out.append({"job_id": j.get("job_id", d.name),
                             "topic": j.get("topic", ""),
                             "style": j.get("style", ""),
@@ -97,17 +107,21 @@ def list_jobs() -> list[dict]:
                             "llm_cost_yuan": j.get("llm_cost_yuan", 0.0),
                             "est_seconds": _est(j),
                             "created": d.name.split("-")[0]
-                            + " " + ":".join(d.name.split("-")[1:3])})
+                            + " " + ":".join(d.name.split("-")[1:3]),
+                            "creator_account_id": j.get("creator_account_id", "default")})
             except Exception:
                 continue
     return out[:50]
 
 
-def get_job(job_id: str) -> dict | None:
+def get_job(job_id: str, creator_account_id: str | None = None) -> dict | None:
     jf = JOBS_DIR / job_id / "job.json"
     if not jf.exists():
         return None
     data = json.loads(jf.read_text(encoding="utf-8"))
+    if creator_account_id is not None and \
+            data.get("creator_account_id", "default") != creator_account_id:
+        return None
     sf = JOBS_DIR / job_id / "soulx_script.json"
     if sf.exists():
         data["script"] = json.loads(sf.read_text(encoding="utf-8"))
@@ -119,18 +133,23 @@ def _run(job_id: str, topic: str, style: str, minutes: int, material: str,
          tts_engine: str = ""):
     job = Job(topic=topic, style=style, minutes=minutes,
               job_id=job_id, provider=provider)
+    persisted = get_job(job_id) or {}
     try:
         _set(job_id, status="running", step="research")
         st = PipelineState(topic=topic, style=style, minutes=minutes,
                            material=material, job=job, provider=provider,
-                           voice_map=voice_map, tts_url=tts_url)
+                           voice_map=voice_map, tts_url=tts_url,
+                           style_desc=persisted.get("style_desc", ""),
+                           style_n_interrupt=persisted.get("style_n_interrupt"))
         if provider == "agent":
             # Deep Agent 写稿：自主规划+工具循环（体检/校验/术语内置），一次交付
             _set(job_id, step="draft")
             from orchestrator.writing_agent import run_writing_agent
             t0 = time.time()
             res = run_writing_agent(topic, minutes=minutes,
-                                    material=st.material, style=style)
+                                    material=st.material, style=style,
+                                    style_desc=persisted.get("style_desc", ""),
+                                    skill_notes=persisted.get("skill_notes", ""))
             trace(job_id, "step_ms", step="agent_write",
                   ms=int((time.time() - t0) * 1000),
                   lint_score=res["lint"].get("score"),
@@ -399,7 +418,8 @@ def create_jobs_from_schedule(sch: dict) -> list[str]:
                        provider=os.getenv("DEFAULT_PROVIDER", "mock"),
                        voice_map=voice_map,
                        tts_url=os.getenv("TTS_URL", ""),
-                       bgm=sch.get("bgm", ""))
+                       bgm=sch.get("bgm", ""),
+                       creator_account_id=sch.get("creator_account_id", "default"))
         created.append(r["job_id"])
     trace("scheduler", "schedule_run", schedule=sch.get("id"),
           count=len(created))

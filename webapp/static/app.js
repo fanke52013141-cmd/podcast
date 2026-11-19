@@ -1,6 +1,6 @@
 /* 工作台交互 —— 零构建原生 JS */
 const $ = (id) => document.getElementById(id);
-const STYLES = ["幽默对谈","漫才","深夜电台","访谈","辩论","实战课堂","故事剧场","纪实探索","热点解读"];
+let stylesCache = [];
 let curStyle = "幽默对谈";
 let voices = [];
 const taskPlayer = new Audio();
@@ -9,13 +9,13 @@ let playingJob = "";
 
 // ---------- 初始化 ----------
 async function init() {
-  renderStyles();
+  await loadStyles();
   try { voices = await (await fetch("/api/voices")).json(); } catch {}
   fillVoices($("hostVoice"), "female");
   fillVoices($("partnerVoice"), "male");
   try {                                            // 应用设置页里的任务默认值
     const s = await (await fetch("/api/settings")).json();
-    if (STYLES.includes(s.defaults.style)) { curStyle = s.defaults.style; renderStyles(); }
+    if (stylesCache.some(x => x.name === s.defaults.style)) { curStyle = s.defaults.style; renderStyles(); }
     $("minutes").value = s.defaults.minutes;
     $("minutesVal").textContent = s.defaults.minutes + " 分钟";
     // 默认音色在下拉中不存在时自动回落第一项（防止下拉空白）
@@ -48,7 +48,7 @@ async function setupTemplates() {
     curTpl = templates.find(t => t.id === $("tplSel").value) || null;
     $("btnDelTpl").hidden = !curTpl;
     if (!curTpl) return;
-    if (STYLES.includes(curTpl.style)) { curStyle = curTpl.style; renderStyles(); }
+    if (stylesCache.some(x => x.name === curTpl.style)) { curStyle = curTpl.style; renderStyles(); }
     $("minutes").value = curTpl.minutes;
     $("minutesVal").textContent = curTpl.minutes + " 分钟";
     if (curTpl.host_voice) $("hostVoice").value = curTpl.host_voice;
@@ -131,10 +131,25 @@ function toastMsg(msg) {                         // 工作台轻提示（无 toa
   setTimeout(() => { el.hidden = true; el.style.color = ""; }, 3200);
 }
 
+async function loadStyles() {
+  try {
+    const data = await (await fetch("/api/styles")).json();
+    stylesCache = data.styles || [];
+  } catch { stylesCache = []; }
+  renderStyles();
+}
+
 function renderStyles() {
-  $("styles").innerHTML = STYLES.map(s =>
-    `<button class="${s === curStyle ? "on" : ""}" data-s="${s}">${s}</button>`).join("");
-  $("styles").querySelectorAll("button").forEach(b =>
+  const el = $("styles");
+  if (!el) return;
+  if (!stylesCache.some(s => s.name === curStyle) && stylesCache.length) {
+    curStyle = stylesCache[0].name;
+  }
+  el.innerHTML = stylesCache.map(s =>
+    `<button class="${s.name === curStyle ? "on" : ""}" data-s="${escapeHtml(s.name)}"
+      title="${escapeHtml(s.desc || s.name)}" aria-pressed="${s.name === curStyle}">${escapeHtml(s.name)}</button>`).join("")
+    + `<a class="style-manage" href="/settings#secStyles">管理</a>`;
+  el.querySelectorAll("button[data-s]").forEach(b =>
     b.addEventListener("click", () => { curStyle = b.dataset.s; renderStyles(); }));
 }
 
@@ -270,12 +285,11 @@ const STATUS_BADGE = {
 async function refreshTasks() {
   let jobs = [];
   try { jobs = await (await fetch("/api/jobs")).json(); } catch { return; }
-  $("stJobs").textContent = jobs.length;
-  $("stDone").textContent = jobs.filter(j => j.status === "done" || j.status === "script_ready").length;
-  $("stRunning").textContent = jobs.filter(j => ["running", "synthesizing", "queued"].includes(j.status)).length;
-  renderWeekBars(jobs);
   const el = $("tasks");
-  if (!jobs.length) return;
+  if (!jobs.length) {
+    el.innerHTML = `<div class="empty">当前账号还没有任务，从上方开始创作吧</div>`;
+    return;
+  }
   jobs = jobs.slice(0, 5);                       // 工作台只显示最近 5 个，全部见任务中心
   el.innerHTML = jobs.map(j => taskRow(j, false)).join("");
   syncPlayingButtons();

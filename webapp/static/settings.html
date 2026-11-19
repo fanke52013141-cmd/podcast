@@ -4,28 +4,32 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>设置 · AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.13">
-<link rel="stylesheet" href="/static/duo.css?v=0.13">
-<link rel="stylesheet" href="/static/final.css?v=0.13">
-<link rel="stylesheet" href="/static/dropdown.css?v=0.13">
-<script src="/static/dropdown.js?v=0.13" defer></script>
+<link rel="stylesheet" href="/static/style.css?v=0.17">
+<link rel="stylesheet" href="/static/duo.css?v=0.17">
+<link rel="stylesheet" href="/static/final.css?v=0.17">
+<link rel="stylesheet" href="/static/dropdown.css?v=0.17">
+<script src="/static/dropdown.js?v=0.17" defer></script>
+<link rel="stylesheet" href="/static/warm.css?v=0.17">
+<script src="/static/creator.js?v=0.17" defer></script>
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a href="/voices?v=0.13">音色库</a>
-    <a href="/tasks?v=0.13">任务中心</a>
-    <a class="active" href="/settings?v=0.13">设置</a>
-    <a href="/logs?v=0.13">日志</a>
+    <a href="/voices?v=0.17">音色库</a>
+    <a href="/tasks?v=0.17">任务中心</a>
+    <a class="active" href="/settings?v=0.17">设置</a>
+    <a href="/logs?v=0.17">日志</a>
   </nav>
 </header>
 
 <main class="setwrap">
   <aside class="setnav card">
     <a href="#secLlm" class="on">写稿引擎</a>
+    <a href="#secAgent">Deep Agent 技能</a>
     <a href="#secTts">语音合成</a>
+    <a href="#secStyles">对话风格</a>
     <a href="#secDefaults">任务默认值</a>
     <a href="#secData">数据与目录</a>
     <a href="#secQueue">夜间队列</a>
@@ -55,7 +59,29 @@
       </div>
     </section>
 
-    <!-- ② 语音合成 -->
+    <!-- ② Deep Agent 技能 -->
+    <section class="card setcard" id="secAgent">
+      <div class="setsec-head">
+        <div>
+          <h2>Deep Agent 技能</h2>
+          <p class="setsec-desc">内置工具技能随写稿 Agent 自动调用；上传 Markdown 技能手册后，会按当前创作账号注入写稿指令。</p>
+        </div>
+        <div class="skill-upload">
+          <input type="file" id="skillFile" accept=".md,.txt" hidden>
+          <button class="primary" id="btnUploadSkill">上传 Skill 手册</button>
+        </div>
+      </div>
+      <div class="skill-section">
+        <div class="skill-subtitle">内置工具</div>
+        <div id="skillBuiltin" class="skill-chips"></div>
+      </div>
+      <div class="skill-section">
+        <div class="skill-subtitle">本账号技能手册</div>
+        <div id="skillCustom" class="skill-list"></div>
+      </div>
+    </section>
+
+    <!-- ③ 语音合成 -->
     <section class="card setcard" id="secTts">
       <h2>语音合成</h2>
       <div class="frow">
@@ -82,7 +108,7 @@
           <input id="sVsCmd" class="mono" placeholder="python /path/VoiceStar/inference.py --text &quot;{text}&quot; --target_duration {duration} --ref_audio &quot;{ref}&quot; --output &quot;{out}&quot;"></div>
       </div>
 
-      <div class="field-label" style="margin-top:18px">写稿账号池（多账号：可编辑/切换，写稿失败自动轮换下一个）</div>
+      <div class="field-label" style="margin-top:18px">写稿 API 账号池（可编辑/切换，写稿失败自动轮换）</div>
       <div id="accList" style="display:flex;flex-direction:column;gap:8px"></div>
       <div style="margin-top:10px"><button class="ghost" id="btnAddAcc">＋ 添加账号</button></div>
       <dialog id="accDlg" style="max-width:520px;width:92vw">
@@ -98,13 +124,17 @@
           <span></span><button class="primary" id="accSave">保存</button></div>
       </dialog>
 
-      <div class="field-label" style="margin-top:20px">写稿提示词（留空=内置默认；高级）</div>
-      <div class="field-label" style="margin:0 0 6px">主编系统提示（STEP A 的角色设定）</div>
-      <textarea id="pSystem" rows="3" placeholder="留空使用内置默认"></textarea>
-      <div class="field-label" style="margin:8px 0 0">Step A · 素材改写成对话蓝本（占位符：{material} {style_desc} {words} {n_interruptions}）</div>
-      <textarea id="pStepA" rows="5" placeholder="留空使用内置默认"></textarea>
-      <div class="field-label" style="margin:8px 0 0">Step B · 蓝本加工成脚本 JSON（占位符：{draft} {speaker_ids} {s1_desc} {s2_desc} {allowed_tags}）</div>
-      <textarea id="pStepB" rows="5" placeholder="留空使用内置默认"></textarea>
+      <details class="advanced-prompts">
+        <summary>写稿提示词（高级，留空使用内置默认）</summary>
+        <div class="advanced-prompts-body">
+          <div class="field-label">主编系统提示（STEP A 的角色设定）</div>
+          <textarea id="pSystem" rows="3" placeholder="留空使用内置默认"></textarea>
+          <div class="field-label">Step A · 素材改写成对话蓝本（占位符：{material} {style_desc} {words} {n_interruptions}）</div>
+          <textarea id="pStepA" rows="5" placeholder="留空使用内置默认"></textarea>
+          <div class="field-label">Step B · 蓝本加工成脚本 JSON（占位符：{draft} {speaker_ids} {s1_desc} {s2_desc} {allowed_tags}）</div>
+          <textarea id="pStepB" rows="5" placeholder="留空使用内置默认"></textarea>
+        </div>
+      </details>
 
       <div class="field-label" style="margin-top:18px">API 合成引擎（可选，与本地引擎并存）</div>
       <div class="frow">
@@ -125,7 +155,19 @@
       </div>
     </section>
 
-    <!-- ③ 任务默认值 -->
+    <!-- ④ 对话风格 -->
+    <section class="card setcard" id="secStyles">
+      <div class="setsec-head">
+        <div>
+          <h2>对话风格</h2>
+          <p class="setsec-desc">风格名称最多 4 个字；自定义描述会直接进入写稿提示词。</p>
+        </div>
+        <button class="primary" id="btnNewStyle">＋ 新建风格</button>
+      </div>
+      <div id="styleLibrary" class="style-library"></div>
+    </section>
+
+    <!-- ⑤ 任务默认值 -->
     <section class="card setcard" id="secDefaults">
       <h2>任务默认值</h2>
       <div class="frow">
@@ -140,7 +182,7 @@
       </div>
     </section>
 
-    <!-- ④ 数据与目录 -->
+    <!-- ⑥ 数据与目录 -->
     <section class="card setcard" id="secData">
       <h2>数据与目录</h2>
       <div class="frow">
@@ -154,7 +196,7 @@
       </div>
     </section>
 
-    <!-- ⑤ 夜间批量队列（P3-5） -->
+    <!-- ⑦ 夜间批量队列（P3-5） -->
     <section class="card setcard" id="secQueue">
       <h2>夜间批量队列</h2>
       <div class="frow">
@@ -171,6 +213,25 @@
       <div id="qList" class="qlist" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
     </section>
 
+    <dialog id="styleDlg" style="width:460px;max-width:calc(100vw - 32px)">
+      <div class="dlg-head"><h3 id="styleDlgTitle">新建风格</h3>
+        <button class="ghost" type="button" id="styleClose">关闭</button></div>
+      <div class="field-label">风格名称（最多 4 个字）</div>
+      <input id="styleName" maxlength="4" placeholder="例如：冷幽默">
+      <div class="field-label">风格描述（写稿 Agent 会按这段描述生成）</div>
+      <textarea id="styleDesc" rows="4" maxlength="120" placeholder="例如：语速克制，冷幽默，观点锋利但不刻薄，用具体案例替代空泛金句。"></textarea>
+      <div class="style-dialog-meta">
+        <span class="small">抢话次数</span>
+        <input id="styleInterrupt" type="number" min="1" max="8" value="4" style="width:74px">
+        <span class="small">次 / 期</span>
+      </div>
+      <div id="styleError" class="creator-error" hidden></div>
+      <div class="actionbar" style="position:static;margin-top:18px">
+        <span></span>
+        <button class="primary" type="button" id="styleSave">保存</button>
+      </div>
+    </dialog>
+
     <div class="actionbar">
       <div>
         <button class="ghost" id="btnReset">重置为默认</button>
@@ -180,6 +241,6 @@
   </div>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/settings.js?v=0.13"></script>
+<script src="/static/settings.js?v=0.17"></script>
 </body>
 </html>

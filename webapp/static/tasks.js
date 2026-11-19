@@ -32,9 +32,45 @@ async function refresh() {
   render();
 }
 
+function taskTime(j) {
+  return jobTimeFull(j);
+}
+
+const STEP_LABELS = ["素材", "写稿", "校验", "合成", "后期"];
+
+function taskStage(j) {
+  const step = j.step || "";
+  if (j.status === "done") return { stage: 5, complete: true, failed: false };
+  if (j.status === "failed") {
+    const failed = { research: 1, draft: 2, rewrite: 2, validate: 3,
+                     synthesize: 4, postprocess: 5 }[step] || 1;
+    return { stage: failed, complete: false, failed: true };
+  }
+  if (j.status === "queued") return { stage: 1, complete: false, failed: false };
+  if (j.status === "script_ready") return { stage: 3, complete: false, failed: false };
+  if (j.status === "synthesizing") return { stage: 4, complete: false, failed: false };
+  if (j.status === "postprocessing") return { stage: 5, complete: false, failed: false };
+  const running = { research: 1, draft: 2, rewrite: 2, validate: 3 }[step] || 2;
+  return { stage: running, complete: false, failed: false };
+}
+
+function stepRail(j) {
+  const info = taskStage(j);
+  const dots = STEP_LABELS.map((label, index) => {
+    const n = index + 1;
+    let cls = "";
+    if (info.failed && n === info.stage) cls = "failed";
+    else if (info.complete || n < info.stage) cls = "done";
+    else if (n === info.stage) cls = "current";
+    return `<span class="sdot ${cls}" title="${n}/5 ${label}">${n}</span>`;
+  }).join("");
+  const current = info.complete ? "5/5 完成" : `${info.stage}/5 ${STEP_LABELS[info.stage - 1]}`;
+  return `<div class="steprail">${dots}<span class="stepnow${info.failed ? " failed" : ""}">${current}</span></div>`;
+}
+
 function render() {
   const map = { all: () => true,
-    active: j => ["queued", "running", "synthesizing"].includes(j.status),
+    active: j => ["queued", "running", "synthesizing", "postprocessing"].includes(j.status),
     script_ready: j => j.status === "script_ready",
     done: j => j.status === "done", failed: j => j.status === "failed" };
   const list = jobs.filter(map[filter] || map.all);
@@ -45,20 +81,35 @@ function render() {
     queued: ["script", "排队中"], failed: ["failed", "失败"], postprocessing: ["running", "后期中"] };
   el.innerHTML = list.map(j => {
     const [cls, label] = badge[j.status] || ["script", j.status];
-    return `<div class="task" onclick="location.href='/job/${j.job_id}'">
+    return `<div class="task task-center-row" onclick="location.href='/job/${j.job_id}'">
       <button class="tplay ${playingJob === j.job_id ? "playing" : ""}" data-id="${j.job_id}"
         onclick="toggleTaskAudio(event,'${j.job_id}',this)" title="播放" aria-label="播放">
         <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>
         <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx=".8"/><rect x="13.5" y="5" width="3.5" height="14" rx=".8"/></svg>
       </button>
       <div class="info"><div class="title">${escapeHtml(j.topic || j.job_id)}</div>
-        <div class="meta">${j.minutes} 分钟 · ${j.style}</div></div>
-      <span class="badge ${cls}">${label}</span>
-      <span class="ttime mono">${jobTimeFull(j)}</span>
-      <a class="detail-link" onclick="event.stopPropagation();location.href='/job/${j.job_id}'">详情 →</a>
-      <button class="ghost del" onclick="delJob(event,'${j.job_id}','${escapeHtml(j.topic || "").replace(/'/g, "")}')">删除</button>
+        <div class="meta">${j.minutes} 分钟 · ${escapeHtml(j.style || "")}</div></div>
+      <span class="ttime mono" title="创建时间">${taskTime(j)}</span>
+      <div class="statuscell">
+        <span class="badge ${cls}">${label}</span>
+        ${stepRail(j)}
+      </div>
+      <div class="task-actions">
+        <button class="task-btn task-detail" data-id="${j.job_id}" type="button">详情</button>
+        <button class="task-btn task-delete" data-id="${j.job_id}" type="button">删除</button>
+      </div>
     </div>`;
   }).join("");
+  el.querySelectorAll(".task-detail").forEach(btn =>
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      location.href = `/job/${btn.dataset.id}`;
+    }));
+  el.querySelectorAll(".task-delete").forEach(btn =>
+    btn.addEventListener("click", e => {
+      const job = jobs.find(x => x.job_id === btn.dataset.id);
+      delJob(e, btn.dataset.id, job ? (job.topic || "") : "");
+    }));
   syncPlayingButtons();
 }
 

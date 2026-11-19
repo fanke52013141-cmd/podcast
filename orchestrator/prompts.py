@@ -109,11 +109,15 @@ STYLES = {
 }
 
 
-def step_a_prompt(material: str, style: str, minutes: int) -> str:
+def step_a_prompt(material: str, style: str, minutes: int,
+                  style_desc: str | None = None,
+                  n_interruptions: int | None = None) -> str:
     s = STYLES.get(style, STYLES["幽默对谈"])
+    desc = (style_desc or "").strip() or s["desc"]
+    interrupts = s["n_interrupt"] if n_interruptions is None else int(n_interruptions)
     words = int(minutes * 60 * 4.2)          # 目标字数（4.2字/秒留呼吸感）
-    return step_a_user().format(material=material, style_desc=s["desc"],
-                                words=words, n_interruptions=s["n_interrupt"])
+    return step_a_user().format(material=material, style_desc=desc,
+                                words=words, n_interruptions=interrupts)
 
 
 def step_b_prompt(draft: str, speaker_ids: list[str],

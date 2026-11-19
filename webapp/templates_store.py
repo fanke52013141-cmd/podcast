@@ -8,6 +8,8 @@ import json
 import time
 from pathlib import Path
 
+from webapp import creator_store
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_PATH = BASE_DIR / "templates.json"
 
@@ -24,23 +26,23 @@ SEEDS = [
 ]
 
 
-def _path(p=None) -> Path:
-    return Path(p) if p else DEFAULT_PATH
+def _path(p=None, *, account_id: str = creator_store.DEFAULT_ACCOUNT_ID) -> Path:
+    return Path(p) if p else creator_store.templates_path(account_id)
 
 
-def list_templates(p=None) -> list[dict]:
-    path = _path(p)
+def list_templates(p=None, *, account_id: str = creator_store.DEFAULT_ACCOUNT_ID) -> list[dict]:
+    path = _path(p, account_id=account_id)
     if not path.exists():
         path.write_text(json.dumps({"templates": SEEDS}, ensure_ascii=False, indent=2),
                         encoding="utf-8")
     return json.loads(path.read_text(encoding="utf-8"))["templates"]
 
 
-def create_template(data: dict, p=None) -> dict:
+def create_template(data: dict, p=None, *, account_id: str = creator_store.DEFAULT_ACCOUNT_ID) -> dict:
     name = (data.get("name") or "").strip()
     if not name:
         raise ValueError("模板名称不能为空")
-    templates = list_templates(p)
+    templates = list_templates(p, account_id=account_id)
     tpl = {
         "id": data.get("id") or f"tpl_{int(time.time() * 1000)}",
         "name": name,
@@ -51,14 +53,14 @@ def create_template(data: dict, p=None) -> dict:
         "minutes": int(data.get("minutes", 10)),
     }
     templates.append(tpl)
-    path = _path(p)
+    path = _path(p, account_id=account_id)
     path.write_text(json.dumps({"templates": templates}, ensure_ascii=False, indent=2),
                     encoding="utf-8")
     return tpl
 
 
-def delete_template(tid: str, p=None) -> None:
-    templates = [t for t in list_templates(p) if t["id"] != tid]
-    path = _path(p)
+def delete_template(tid: str, p=None, *, account_id: str = creator_store.DEFAULT_ACCOUNT_ID) -> None:
+    templates = [t for t in list_templates(p, account_id=account_id) if t["id"] != tid]
+    path = _path(p, account_id=account_id)
     path.write_text(json.dumps({"templates": templates}, ensure_ascii=False, indent=2),
                     encoding="utf-8")

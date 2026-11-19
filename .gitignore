@@ -5,6 +5,10 @@ jobs/
 tts_out/
 outputs/
 uploads/
+creator_accounts.json
+creator_data/
+styles.json
+agent_skills/
 
 # Python
 __pycache__/

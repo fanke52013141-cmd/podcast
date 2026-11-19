@@ -130,6 +130,8 @@ class PipelineState:
     tts_url: str = ""
     wav_path: str | None = None
     provider: str = "api"        # api | mock（无 key 联调用）
+    style_desc: str = ""
+    style_n_interrupt: int | None = None
 
 
 # ---------------- 各节点 ----------------
@@ -146,7 +148,9 @@ def draft_node(s: PipelineState) -> PipelineState:
         from orchestrator.mock_llm import mock_draft
         s.draft = mock_draft(s.material or s.topic, s.minutes, s.style)
         return s
-    r = call_llm(step_a_prompt(s.material, s.style, s.minutes), system_editor())
+    r = call_llm(step_a_prompt(s.material, s.style, s.minutes,
+                               style_desc=s.style_desc,
+                               n_interruptions=s.style_n_interrupt), system_editor())
     s.draft = r.text
     if s.job:
         s.job.llm_tokens_in += r.tokens_in; s.job.llm_tokens_out += r.tokens_out

@@ -8,7 +8,7 @@ import asyncio, json, os, re
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 
@@ -30,6 +30,7 @@ from pydantic import BaseModel
 from orchestrator.extract import extract
 from webapp import jobs as jobmgr
 from webapp import settings_store
+from webapp import creator_store
 
 # 启动时把 .env 注入 os.environ：保证 os.getenv 在任意进程重启后都能读到
 # （此前只有设置页保存时才注入，重启后写稿/TTS 引擎拿不到 Key）
@@ -77,10 +78,23 @@ async def no_cache_for_dev(request, call_next):
     """开发期静态资源禁用启发式缓存：每次都带条件请求，改动即时可见。"""
     resp = await call_next(request)
     p = request.url.path
-    if p.startswith("/static") or p in ("/", "/tasks", "/voices", "/settings", "/traces") \
+    if p.startswith("/static") or p in ("/", "/tasks", "/voices", "/settings", "/traces", "/logs", "/compare") \
             or p.startswith("/job/"):
         resp.headers["Cache-Control"] = "no-cache"
     return resp
+
+
+@app.middleware("http")
+async def creator_account_guard(request, call_next):
+    """创作账号归属校验：切换后不能通过旧链接访问其他账号任务。"""
+    account_id = creator_store.active_id()
+    request.state.creator_account_id = account_id
+    match = re.match(r"^/(?:api/jobs|job)/([^/]+)(?:/|$)", request.url.path)
+    if match and match.group(1) != "batch":
+        job_id = match.group(1)
+        if jobmgr.get_job(job_id, creator_account_id=account_id) is None:
+            return JSONResponse({"detail": "任务不存在或不属于当前创作账号"}, status_code=404)
+    return await call_next(request)
 
 
 @app.get("/")
@@ -113,14 +127,135 @@ def logs_page():
     return FileResponse(BASE_DIR / "webapp" / "static" / "logs.html")
 
 
+@app.get("/compare")
+def compare_page():
+    return FileResponse(BASE_DIR / "webapp" / "static" / "compare.html")
+
+
 @app.get("/job/{job_id}")
 def job_page(job_id: str):
-    if jobmgr.get_job(job_id) is None:
+    if jobmgr.get_job(job_id, creator_account_id=creator_store.active_id()) is None:
         raise HTTPException(404, "任务不存在")
     return FileResponse(BASE_DIR / "webapp" / "static" / "job.html")
 
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "webapp" / "static"), name="static")
+
+
+# ---------- 本机创作账号（无需密码；区别于 LLM API 账号池） ----------
+
+@app.get("/api/creator-accounts")
+def creator_accounts_list():
+    return {"accounts": creator_store.list_accounts(),
+            "active_id": creator_store.active_id()}
+
+
+@app.post("/api/creator-accounts")
+def creator_accounts_create(payload: dict):
+    try:
+        account = creator_store.create(payload or {})
+        return {"account": account, "active_id": account["id"]}
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.post("/api/creator-accounts/{account_id}/select")
+def creator_accounts_select(account_id: str):
+    try:
+        account = creator_store.select(account_id)
+        return {"ok": True, "account": account, "active_id": account_id}
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.patch("/api/creator-accounts/{account_id}")
+def creator_accounts_update(account_id: str, payload: dict):
+    try:
+        account = creator_store.update(account_id, payload or {})
+        return {"ok": True, "account": account, "active_id": creator_store.active_id()}
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.delete("/api/creator-accounts/{account_id}")
+def creator_accounts_delete(account_id: str):
+    try:
+        result = creator_store.delete(account_id)
+        return {"ok": True, **result}
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+# ---------- 对话风格库 ----------
+
+class StyleReq(BaseModel):
+    name: str
+    desc: str = ""
+    n_interrupt: int = 4
+
+
+@app.get("/api/styles")
+def styles_list():
+    from webapp import style_store
+    return {"styles": style_store.list_styles(creator_store.active_id()),
+            "active_id": creator_store.active_id()}
+
+
+@app.post("/api/styles")
+def styles_create(req: StyleReq):
+    from webapp import style_store
+    try:
+        return style_store.create_style(req.model_dump(), creator_store.active_id())
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.patch("/api/styles/{style_id}")
+def styles_update(style_id: str, req: StyleReq):
+    from webapp import style_store
+    try:
+        return style_store.update_style(style_id, req.model_dump(), creator_store.active_id())
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.delete("/api/styles/{style_id}")
+def styles_delete(style_id: str):
+    from webapp import style_store
+    try:
+        style_store.delete_style(style_id, creator_store.active_id())
+        return {"ok": True}
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+# ---------- Deep Agent 技能手册 ----------
+
+@app.get("/api/agent-skills")
+def agent_skills_list():
+    from webapp import skill_store
+    return skill_store.list_skills(creator_store.active_id())
+
+
+@app.post("/api/agent-skills")
+async def agent_skills_upload(file: UploadFile = File(...)):
+    from webapp import skill_store
+    content = await file.read()
+    try:
+        return skill_store.save_skill(file.filename or "skill.md", content,
+                                      creator_store.active_id())
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+
+
+@app.delete("/api/agent-skills/{skill_id}")
+def agent_skills_delete(skill_id: str):
+    from webapp import skill_store
+    try:
+        skill_store.delete_skill(skill_id, creator_store.active_id())
+        return {"ok": True}
+    except ValueError as e:
+        raise HTTPException(404, str(e))
 
 
 # ---------- API ----------
@@ -153,13 +288,14 @@ def create_job(req: CreateReq):
         raise HTTPException(400, f"素材抽取失败: {e}")
     voice_map = {"S1": req.host_voice or os.getenv("DEFAULT_HOST_VOICE", "v01_female_warm"),
                  "S2": req.partner_voice or os.getenv("DEFAULT_PARTNER_VOICE", "v02_male_deep")}
+    account_id = creator_store.active_id()
     tts_url = req.tts_url or os.getenv("TTS_URL", "")
     # 音色×引擎亲和校验（PLAN §2.0）：引擎指定且 TTS 可用时不兼容组合直接拦截
     if req.tts_engine and tts_url:
         from webapp import voice_store
         bad = []
         for sid, vid in voice_map.items():
-            v = voice_store.get(vid)
+            v = voice_store.get(vid, account_id=account_id)
             sup = voice_store.supported_engines(v) if v else set()
             if sup and req.tts_engine not in sup:
                 bad.append(f"{sid}={vid}（该音色不支持 {req.tts_engine}，支持: {', '.join(sorted(sup))}）")
@@ -168,7 +304,7 @@ def create_job(req: CreateReq):
     return jobmgr.create_job(req.topic.strip(), req.style, req.minutes,
                              material=material, provider=req.provider,
                              voice_map=voice_map, tts_url=tts_url, bgm=req.bgm,
-                             tts_engine=req.tts_engine)
+                             tts_engine=req.tts_engine, creator_account_id=account_id)
 
 
 @app.post("/api/upload")
@@ -194,7 +330,7 @@ async def upload_material(file: UploadFile = File(...)):
 @app.get("/api/templates")
 def get_templates():
     from webapp import templates_store
-    return templates_store.list_templates()
+    return templates_store.list_templates(account_id=creator_store.active_id())
 
 
 class TemplateReq(BaseModel):
@@ -210,7 +346,7 @@ class TemplateReq(BaseModel):
 def create_template(req: TemplateReq):
     from webapp import templates_store
     try:
-        return templates_store.create_template(req.model_dump())
+        return templates_store.create_template(req.model_dump(), account_id=creator_store.active_id())
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -218,7 +354,7 @@ def create_template(req: TemplateReq):
 @app.delete("/api/templates/{tid}")
 def delete_template(tid: str):
     from webapp import templates_store
-    templates_store.delete_template(tid)
+    templates_store.delete_template(tid, account_id=creator_store.active_id())
     return {"ok": True}
 
 
@@ -227,7 +363,7 @@ def delete_template(tid: str):
 @app.get("/api/schedules")
 def get_schedules():
     from webapp import schedules_store
-    return schedules_store.list_schedules()
+    return schedules_store.list_schedules(account_id=creator_store.active_id())
 
 
 class ScheduleReq(BaseModel):
@@ -245,7 +381,9 @@ class ScheduleReq(BaseModel):
 def create_schedule(req: ScheduleReq):
     from webapp import schedules_store
     try:
-        return schedules_store.create_schedule(req.model_dump())
+        data = req.model_dump()
+        data["creator_account_id"] = creator_store.active_id()
+        return schedules_store.create_schedule(data)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -253,6 +391,9 @@ def create_schedule(req: ScheduleReq):
 @app.delete("/api/schedules/{sid}")
 def delete_schedule(sid: str):
     from webapp import schedules_store
+    account_id = creator_store.active_id()
+    if not any(s["id"] == sid for s in schedules_store.list_schedules(account_id=account_id)):
+        raise HTTPException(404, "schedule 不存在")
     schedules_store.delete_schedule(sid)
     return {"ok": True}
 
@@ -260,7 +401,8 @@ def delete_schedule(sid: str):
 @app.post("/api/schedules/{sid}/run-now")
 def run_schedule_now(sid: str):
     from webapp import schedules_store
-    for s in schedules_store.list_schedules():
+    account_id = creator_store.active_id()
+    for s in schedules_store.list_schedules(account_id=account_id):
         if s["id"] == sid:
             created = jobmgr.create_jobs_from_schedule(s)
             return {"ok": True, "created": created, "count": len(created)}
@@ -269,12 +411,12 @@ def run_schedule_now(sid: str):
 
 @app.get("/api/jobs")
 def list_jobs():
-    return jobmgr.list_jobs()
+    return jobmgr.list_jobs(creator_account_id=creator_store.active_id())
 
 
 @app.get("/api/jobs/{job_id}")
 def get_job(job_id: str):
-    j = jobmgr.get_job(job_id)
+    j = jobmgr.get_job(job_id, creator_account_id=creator_store.active_id())
     if j is None:
         raise HTTPException(404, "任务不存在")
     return j
@@ -431,7 +573,8 @@ def create_batch(req: BatchReq):
         r = jobmgr.create_job(it["title"], req.style, req.minutes,
                               material=material, provider=req.provider,
                               voice_map={"S1": req.host_voice, "S2": req.partner_voice},
-                              tts_url=os.getenv("TTS_URL", ""), bgm=req.bgm)
+                              tts_url=os.getenv("TTS_URL", ""), bgm=req.bgm,
+                              creator_account_id=creator_store.active_id())
         created.append(r["job_id"])
     return {"feed_title": feed.get("feed_title", ""), "created": created,
             "count": len(created)}
@@ -702,6 +845,7 @@ def make_diag(req: DiagReq):
 @app.get("/api/voices")
 def voices():
     from webapp import voice_store
+    account_id = creator_store.active_id()
     return [{"id": v["id"], "name": v["name"], "gender": v["gender"],
              "age_range": v["age_range"], "style_tags": v["style_tags"],
              "persona_name": v.get("persona_name", ""),
@@ -711,7 +855,7 @@ def voices():
              "language": v.get("language", "zh"),
              "prompt_audio": v.get("prompt_audio", ""),
              "prompt_text": v.get("prompt_text", "")}
-            for v in voice_store.list_voices()]
+            for v in voice_store.list_voices(account_id=account_id)]
 
 
 class VoiceReq(BaseModel):
@@ -731,7 +875,7 @@ class VoiceReq(BaseModel):
 def create_voice(req: VoiceReq):
     from webapp import voice_store
     try:
-        return voice_store.create(req.model_dump())
+        return voice_store.create(req.model_dump(), account_id=creator_store.active_id())
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -740,7 +884,7 @@ def create_voice(req: VoiceReq):
 def update_voice(vid: str, req: VoiceReq):
     from webapp import voice_store
     try:
-        return voice_store.update(vid, req.model_dump())
+        return voice_store.update(vid, req.model_dump(), account_id=creator_store.active_id())
     except ValueError as e:
         raise HTTPException(404, str(e))
 
@@ -752,7 +896,7 @@ def delete_voice(vid: str):
     if vid in (defaults["host_voice"], defaults["partner_voice"]):
         raise HTTPException(409, "该音色正作为默认主持人/搭档，请先更换默认音色再删除")
     try:
-        voice_store.delete(vid, remove_audio=True)
+        voice_store.delete(vid, remove_audio=True, account_id=creator_store.active_id())
         return {"ok": True, "deleted": vid}
     except ValueError as e:
         raise HTTPException(404, str(e))
@@ -768,7 +912,7 @@ async def upload_voice_audio(vid: str, file: UploadFile = File(...)):
         raise HTTPException(400, "文件超过 20MB")
     suffix = "." + file.filename.rsplit(".", 1)[-1].lower()
     try:
-        rel = voice_store.save_audio(vid, content, suffix)
+        rel = voice_store.save_audio(vid, content, suffix, account_id=creator_store.active_id())
         return {"ok": True, "path": rel}
     except ValueError as e:
         raise HTTPException(404, str(e))
@@ -777,9 +921,9 @@ async def upload_voice_audio(vid: str, file: UploadFile = File(...)):
 @app.get("/api/voices/{vid}/audio")
 def voice_audio(vid: str):
     from webapp import voice_store
-    if not voice_store.get(vid):
+    if not voice_store.get(vid, account_id=creator_store.active_id()):
         raise HTTPException(404, "音色不存在")
-    audio = voice_store.audio_path(vid)
+    audio = voice_store.audio_path(vid, account_id=creator_store.active_id())
     if not audio:
         raise HTTPException(404, "参考音频尚未录制（P1-8）")
     return FileResponse(audio, media_type="audio/wav", filename=f"{vid}.wav")
@@ -792,7 +936,7 @@ class SetRoleReq(BaseModel):
 @app.post("/api/voices/{vid}/set-role")
 def set_voice_role(vid: str, req: SetRoleReq):
     from webapp import voice_store
-    if not voice_store.get(vid):
+    if not voice_store.get(vid, account_id=creator_store.active_id()):
         raise HTTPException(404, "音色不存在")
     if req.role not in ("host", "partner"):
         raise HTTPException(400, "role 只能是 host 或 partner")

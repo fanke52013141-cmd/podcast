@@ -105,7 +105,7 @@ WRITING_RULES_MD = """# 播客写稿规矩（kaikou 规则 + 项目约定）
 """
 
 
-def build_writing_agent(model=None, minutes: int = 3):
+def build_writing_agent(model=None, minutes: int = 3, extra_skills: str = ""):
     """组装写稿 Deep Agent。model 传 langchain ChatOpenAI 实例（账号池供给）。"""
     from deepagents import create_deep_agent
 
@@ -114,6 +114,7 @@ def build_writing_agent(model=None, minutes: int = 3):
              _tool_read_style_rules]
 
     words = int(minutes * 60 * 4.2)
+    skill_section = f"\n\n## 本账号补充技能手册\n{extra_skills.strip()}" if extra_skills.strip() else ""
     system = f"""你是「AI 播客」的写稿主编 Agent，负责产出双人播客脚本（说话人 S1 主持人 / S2 搭档）。
 
 任务：根据用户给的主题/素材，写出 {minutes} 分钟的双人对谈脚本，并通过全部检查后存盘。
@@ -133,7 +134,7 @@ def build_writing_agent(model=None, minutes: int = 3):
 
 ## 写稿规矩
 先用 read_style_rules 读全文规矩再动笔；核心：双字词七八成、一口气≤22字、
-语气词每千字3-5个、禁 AI 套话、破折号省略号禁止、每段结尾留钩子。
+语气词每千字3-5个、禁 AI 套话、破折号省略号禁止、每段结尾留钩子。{skill_section}
 
 不要问用户问题，自主完成。最终交付物只有 final_script.json。"""
 
@@ -142,7 +143,8 @@ def build_writing_agent(model=None, minutes: int = 3):
 
 
 def run_writing_agent(topic: str, minutes: int = 3, material: str = "",
-                      style: str = "幽默对谈") -> dict:
+                      style: str = "幽默对谈", style_desc: str = "",
+                      skill_notes: str = "") -> dict:
     """执行写稿 Agent，返回 {"turns", "tokens_in", "tokens_out", "lint"}。"""
     from langchain_openai import ChatOpenAI
 
@@ -157,9 +159,12 @@ def run_writing_agent(topic: str, minutes: int = 3, material: str = "",
                        base_url=a.get("base_url", "https://api.deepseek.com"),
                        temperature=0.9, max_tokens=8192)
 
-    agent = build_writing_agent(model=model, minutes=minutes)
+    agent = build_writing_agent(model=model, minutes=minutes, extra_skills=skill_notes)
 
-    user_task = (f"写一期 {minutes} 分钟的播客，风格：{style}。\n"
+    style_line = f"风格：{style}"
+    if style_desc.strip():
+        style_line += f"（{style_desc.strip()}）"
+    user_task = (f"写一期 {minutes} 分钟的播客，{style_line}。\n"
                  f"主题：{topic}\n"
                  + (f"\n素材（正文）：\n{material[:6000]}" if material else ""))
     result = agent.invoke(

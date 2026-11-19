@@ -92,10 +92,14 @@
           menu.appendChild(row);
         });
       }
-      btn.textContent = sel.options[sel.selectedIndex]?.text || "";
+      const label = sel.options[sel.selectedIndex]?.text || "";
+      if (btn.textContent !== label) btn.textContent = label;
     });
   }
   window.fancySync = syncAll;
+  // 必须立即开始观察：设置页等异步填充 select 的页面依赖首次选项同步。
+  mo.observe(document.body, { childList: true, subtree: true });
+  setTimeout(syncAll, 0);
 
   document.readyState === "loading"
     ? document.addEventListener("DOMContentLoaded", scan)

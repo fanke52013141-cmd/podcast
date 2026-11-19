@@ -4,21 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.13">
-<link rel="stylesheet" href="/static/duo.css?v=0.13">
-<link rel="stylesheet" href="/static/final.css?v=0.13">
-<link rel="stylesheet" href="/static/dropdown.css?v=0.13">
-<script src="/static/dropdown.js?v=0.13" defer></script>
+<link rel="stylesheet" href="/static/style.css?v=0.17">
+<link rel="stylesheet" href="/static/duo.css?v=0.17">
+<link rel="stylesheet" href="/static/final.css?v=0.17">
+<link rel="stylesheet" href="/static/dropdown.css?v=0.17">
+<script src="/static/dropdown.js?v=0.17" defer></script>
+<link rel="stylesheet" href="/static/warm.css?v=0.17">
+<script src="/static/creator.js?v=0.17" defer></script>
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a class="active" href="/">工作台</a>
-    <a href="/voices?v=0.13">音色库</a>
-    <a href="/tasks?v=0.13">任务中心</a>
-    <a href="/settings?v=0.13">设置</a>
-    <a href="/logs?v=0.13">日志</a>
+    <a href="/voices?v=0.17">音色库</a>
+    <a href="/tasks?v=0.17">任务中心</a>
+    <a href="/settings?v=0.17">设置</a>
+    <a href="/logs?v=0.17">日志</a>
   </nav>
 </header>
 
@@ -95,26 +97,13 @@
     </details>
   </section>
 
-  <!-- 概览：上下结构横排 -->
-  <section class="card overview">
-    <div class="ov-stats">
-      <div class="stat"><div class="num" id="stJobs">0</div><div class="lbl">生成集数</div></div>
-      <div class="stat"><div class="num mono" id="stDone">0</div><div class="lbl">已完成</div></div>
-      <div class="stat"><div class="num mono" id="stRunning">0</div><div class="lbl">进行中</div></div>
-    </div>
-    <div class="ov-week">
-      <div class="week-title">本周产出（分钟）</div>
-      <div class="bars" id="weekBars"></div>
-      <div class="week-days mono"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
-    </div>
-  </section>
-
-
   <!-- 下：任务列表 -->
   <section class="card tasks">
     <div class="tasks-head">
       <h2>最近任务</h2>
-      <span class="mono small" id="autoRefresh"><a href="/tasks?v=0.13" style="color:var(--txt2)">全部任务 →</a></span>
+      <div class="tasks-head-side">
+        <span class="mono small" id="autoRefresh"><a href="/tasks?v=0.17">全部任务 →</a></span>
+      </div>
     </div>
     <div id="tasks" class="tasklist"><div class="empty">还没有任务，从上面开始创作吧</div></div>
   </section>
@@ -130,6 +119,6 @@
 </dialog>
 
 <div id="taskToast" class="toast" hidden></div>
-<script src="/static/app.js?v=0.13"></script>
+<script src="/static/app.js?v=0.17"></script>
 </body>
 </html>

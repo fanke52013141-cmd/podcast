@@ -21,12 +21,15 @@ def _path(p=None) -> Path:
     return Path(p) if p else DEFAULT_PATH
 
 
-def list_schedules(p=None) -> list[dict]:
+def list_schedules(p=None, *, account_id: str | None = None) -> list[dict]:
     path = _path(p)
     if not path.exists():
         path.write_text(json.dumps({"schedules": []}, ensure_ascii=False, indent=2),
                         encoding="utf-8")
-    return json.loads(path.read_text(encoding="utf-8"))["schedules"]
+    schedules = json.loads(path.read_text(encoding="utf-8"))["schedules"]
+    if account_id is not None:
+        schedules = [s for s in schedules if s.get("creator_account_id", "default") == account_id]
+    return schedules
 
 
 def _save(schedules: list[dict], p=None) -> None:
@@ -52,6 +55,7 @@ def create_schedule(data: dict, p=None) -> dict:
         "bgm": data.get("bgm", ""),
         "enabled": bool(data.get("enabled", True)),
         "last_run": "",
+        "creator_account_id": data.get("creator_account_id", "default"),
     }
     schedules = list_schedules(p)
     schedules.append(sch)

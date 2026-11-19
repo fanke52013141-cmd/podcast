@@ -1,13 +1,15 @@
-/* 设置页交互 —— 读写 /api/settings + 测试连接/探活 */
+/* 设置页交互 —— 读写 /api/settings + 测试连接/探活 + 风格/Skill 管理 */
 const $ = (id) => document.getElementById(id);
-const STYLES = ["幽默对谈","漫才","深夜电台","访谈","辩论","实战课堂","故事剧场","纪实探索","热点解读"];
 const PARALING_NAME = { laughter: "笑声", sigh: "叹气", breathing: "呼吸", coughing: "咳嗽", throat_clearing: "清嗓" };
 let voices = [];
+let styleCache = [], editingStyleId = null;
 
 async function init() {
   await loadVoices();
+  await loadStyles();
   await loadSettings();
   bind();
+  await loadSkills();
   await setupQueue();
   // 左侧导航高亮：点击立即选中；滚动时按分区位置高亮（页面触底时选中最后一项）
   const links = [...document.querySelectorAll(".setnav a")];
@@ -36,7 +38,110 @@ async function loadVoices() {
   const fill = (sel, g) => sel.innerHTML = voices.filter(v => v.gender === g)
     .map(v => `<option value="${v.id}">${v.name} · ${v.style_tags[0] || ""}</option>`).join("");
   fill($("sHost"), "female"); fill($("sPartner"), "male");
-  $("sStyle").innerHTML = STYLES.map(s => `<option>${s}</option>`).join("");
+}
+
+async function loadStyles() {
+  try {
+    const data = await (await fetch("/api/styles")).json();
+    styleCache = data.styles || [];
+  } catch { styleCache = []; }
+  $("sStyle").innerHTML = styleCache.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join("");
+  renderStyleLibrary();
+}
+
+function renderStyleLibrary() {
+  const el = $("styleLibrary");
+  if (!el) return;
+  if (!styleCache.length) {
+    el.innerHTML = `<div class="empty">暂无可用风格</div>`;
+    return;
+  }
+  el.innerHTML = styleCache.map(s => `
+    <div class="style-item">
+      <div class="style-item-main">
+        <div class="style-item-title">
+          <span class="style-item-name">${escapeHtml(s.name)}</span>
+          <span class="style-item-badge${s.builtin ? " builtin" : ""}">${s.builtin ? "内置" : "自定义"}</span>
+        </div>
+        <div class="style-item-desc">${escapeHtml(s.desc)}</div>
+      </div>
+      ${s.builtin ? "" : `<div class="style-item-actions">
+        <button class="ghost" data-style-edit="${s.id}">编辑</button>
+        <button class="ghost danger" data-style-del="${s.id}">删除</button>
+      </div>`}
+    </div>`).join("");
+  el.querySelectorAll("[data-style-edit]").forEach(btn =>
+    btn.addEventListener("click", () => openStyleDialog(styleCache.find(s => s.id === btn.dataset.styleEdit))));
+  el.querySelectorAll("[data-style-del]").forEach(btn =>
+    btn.addEventListener("click", () => deleteStyle(btn.dataset.styleDel)));
+}
+
+function openStyleDialog(style) {
+  editingStyleId = style ? style.id : null;
+  $("styleDlgTitle").textContent = style ? `编辑风格 · ${style.name}` : "新建风格";
+  $("styleName").value = style ? style.name : "";
+  $("styleDesc").value = style ? style.desc : "";
+  $("styleInterrupt").value = style ? style.n_interrupt : 4;
+  $("styleError").hidden = true;
+  $("styleDlg").showModal();
+  setTimeout(() => $("styleName").focus(), 60);
+}
+
+async function saveStyle() {
+  const body = { name: $("styleName").value.trim(), desc: $("styleDesc").value.trim(),
+                 n_interrupt: +$("styleInterrupt").value || 4 };
+  const error = $("styleError");
+  if (!body.name) { error.textContent = "请填写风格名称"; error.hidden = false; return; }
+  const url = editingStyleId ? `/api/styles/${editingStyleId}` : "/api/styles";
+  const r = await fetch(url, { method: editingStyleId ? "PATCH" : "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { error.textContent = data.detail || "保存失败"; error.hidden = false; return; }
+  $("styleDlg").close();
+  toast(editingStyleId ? "风格已更新" : "风格已创建");
+  await loadStyles();
+  await loadSettings();
+}
+
+async function deleteStyle(id) {
+  const style = styleCache.find(s => s.id === id);
+  if (!style || !confirm(`删除风格「${style.name}」？`)) return;
+  const r = await fetch(`/api/styles/${id}`, { method: "DELETE" });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) return toast(data.detail || "删除失败");
+  toast("风格已删除");
+  await loadStyles();
+  await loadSettings();
+}
+
+async function loadSkills() {
+  let data = { builtin: [], custom: [] };
+  try { data = await (await fetch("/api/agent-skills")).json(); } catch {}
+  $("skillBuiltin").innerHTML = (data.builtin || []).map(s => `
+    <div class="skill-chip" title="${escapeHtml(s.desc)}">
+      <span class="skill-chip-dot"></span>
+      <span>${escapeHtml(s.label)}</span>
+      <small>${escapeHtml(s.name)}</small>
+    </div>`).join("") || `<span class="small">内置工具未加载</span>`;
+  const custom = data.custom || [];
+  $("skillCustom").innerHTML = custom.length ? custom.map(s => `
+    <div class="skill-row">
+      <div class="skill-row-icon">MD</div>
+      <div class="skill-row-main">
+        <div class="skill-row-name">${escapeHtml(s.name)}</div>
+        <div class="skill-row-meta">${s.size < 1024 ? `${s.size || 0} B` : `${((s.size || 0) / 1024).toFixed(1)} KB`} · ${escapeHtml((s.created_at || "").replace("T", " ").replace(/-/g, "."))}</div>
+      </div>
+      <button class="ghost danger skill-del" data-skill-id="${escapeHtml(s.id)}">移除</button>
+    </div>`).join("") : `<div class="skill-empty">还没有上传技能手册。支持 .md / .txt，内容会注入当前账号的写稿 Agent。</div>`;
+  $("skillCustom").querySelectorAll(".skill-del").forEach(btn =>
+    btn.addEventListener("click", async () => {
+      if (!confirm(`移除技能手册「${btn.closest(".skill-row").querySelector(".skill-row-name").textContent}」？`)) return;
+      const r = await fetch(`/api/agent-skills/${encodeURIComponent(btn.dataset.skillId)}`, { method: "DELETE" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return toast(d.detail || "移除失败");
+      toast("技能手册已移除");
+      loadSkills();
+    }));
 }
 
 async function loadSettings() {
@@ -67,7 +172,8 @@ async function loadSettings() {
   $("paraling").querySelectorAll("input").forEach(c =>
     c.addEventListener("change", () => c.closest(".chip").classList.toggle("on", c.checked)));
   // ③ 默认值
-  $("sStyle").value = s.defaults.style;
+  if (styleCache.some(x => x.name === s.defaults.style)) $("sStyle").value = s.defaults.style;
+  else if (styleCache.length) $("sStyle").selectedIndex = 0;
   $("sMinutes").value = s.defaults.minutes;
   $("dminVal").textContent = `${s.defaults.minutes} 分钟`;
   $("sHost").value = s.defaults.host_voice;
@@ -78,6 +184,30 @@ async function loadSettings() {
 }
 
 function bind() {
+  $("btnNewStyle").addEventListener("click", () => openStyleDialog(null));
+  $("styleClose").addEventListener("click", () => $("styleDlg").close());
+  $("styleDlg").addEventListener("click", e => {
+    if (e.target === $("styleDlg")) $("styleDlg").close();
+  });
+  $("styleSave").addEventListener("click", saveStyle);
+  $("btnUploadSkill").addEventListener("click", () => $("skillFile").click());
+  $("skillFile").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const button = $("btnUploadSkill");
+    button.disabled = true; button.textContent = "上传中…";
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const r = await fetch("/api/agent-skills", { method: "POST", body: form });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) toast(data.detail || "上传失败");
+      else { toast(`技能「${data.name}」已上传`); await loadSkills(); }
+    } finally {
+      button.disabled = false; button.textContent = "上传 Skill 手册";
+      e.target.value = "";
+    }
+  });
   $("sTemp").addEventListener("input", e => $("tempVal").textContent = (e.target.value / 10).toFixed(1));
   $("sSeg").addEventListener("input", e => $("segVal").textContent = `${e.target.value} 分钟/段`);
   $("sMinutes").addEventListener("input", e => $("dminVal").textContent = `${e.target.value} 分钟`);
