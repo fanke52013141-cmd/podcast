@@ -34,6 +34,7 @@
       <div class="creator-menu" hidden>
         <div class="creator-menu-head"><b>创作账号</b></div>
         <div id="creatorList" class="creator-list"></div>
+        <div class="creator-menu-hint">账号行可重命名 / 删除；删除后工作区移入 .trash 备份，默认账号不可删除</div>
         <button type="button" class="creator-add" id="creatorAdd">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
           新增创作账号
@@ -188,6 +189,14 @@
             window.alert(err.message);
           }
         });
+        row.append(remove);
+      } else {
+        // 默认账号：图标置灰占位，让删除能力可被发现且有解释
+        const remove = iconButton("delete", "默认账号不可删除（需至少保留一个创作账号）",
+          '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"/>');
+        remove.setAttribute("aria-disabled", "true");
+        remove.style.opacity = ".3";
+        remove.style.cursor = "not-allowed";
         row.append(remove);
       }
       list.appendChild(row);

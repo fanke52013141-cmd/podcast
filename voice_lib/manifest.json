@@ -10,7 +10,7 @@
         "亲切",
         "深夜电台"
       ],
-      "speed_feel": "normal",
+      "speed_feel": "fast",
       "license_status": "authorized",
       "source": "public",
       "prompt_audio": "voice_lib/audio/v01_female_warm.wav",
@@ -31,7 +31,7 @@
         "沉稳",
         "访谈"
       ],
-      "speed_feel": "slow",
+      "speed_feel": "normal",
       "license_status": "authorized",
       "source": "public",
       "prompt_audio": "voice_lib/audio/v02_male_deep.wav",

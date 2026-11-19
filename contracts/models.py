@@ -19,11 +19,12 @@ class Speaker:
     voice_id: str                # 音色库 id，如 "v01_female_warm"
     prompt_audio: str            # 参考音频路径
     prompt_text: str             # 参考音频转写（克隆必需）
+    speed_feel: str = "normal"   # slow/normal/fast —— 后期利落化按此变速
 
     def to_official(self) -> dict:
-        """转成 SoulX 官方格式（去掉扩展字段）"""
+        """转成 SoulX 官方格式（speed_feel 为本系统扩展，SoulX cli 侧会被白名单过滤）"""
         return {"id": self.id, "prompt_audio": self.prompt_audio,
-                "prompt_text": self.prompt_text}
+                "prompt_text": self.prompt_text, "speed_feel": self.speed_feel}
 
 @dataclass
 class SoulXScript:

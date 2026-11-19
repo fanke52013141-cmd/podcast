@@ -82,8 +82,9 @@ def synthesize(script_dict: dict, out_wav: str,
             on_progress(i + 1, len(segs))
         payload = {
             # SoulX 官方格式：speakers 为 dict（name -> {prompt_audio, prompt_text}），
-            # 本系统契约用数组，此处做边界转换（不侵入 SoulX）
-            "speakers": {sid: {k: v for k, v in speakers[sid].items() if k != "id"}
+            # 本系统契约用数组，此处做边界转换；白名单过滤本系统扩展字段（speed_feel 等）
+            "speakers": {sid: {k: v for k, v in speakers[sid].items()
+                               if k in ("prompt_audio", "prompt_text")}
                          for sid in dict.fromkeys(s for s, _ in seg)
                          if sid in speakers},
             "text": [[s, t] for s, t in seg],

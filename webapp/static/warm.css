@@ -73,6 +73,7 @@ a{color:inherit}
   border:0;border-radius:7px;background:transparent;color:#8f8379;cursor:pointer;opacity:.95}
 .creator-action svg{width:15px;height:15px}.creator-action:hover{background:#fff;color:var(--amber-deep);opacity:1}
 .creator-action[data-act="delete"]:hover{background:#fff0ee;color:var(--red)}
+.creator-menu-hint{padding:6px 12px 0;font-size:11px;line-height:1.6;color:#a8a29e}
 .creator-add{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:7px;padding:10px;
   border:0;border-top:1px solid #f5f5f4;background:transparent;color:var(--amber-deep);font:inherit;font-size:12px;font-weight:650;cursor:pointer}
 .creator-add:hover{background:#fff7ed;border-radius:0 0 9px 9px}.creator-add svg{width:15px;height:15px}

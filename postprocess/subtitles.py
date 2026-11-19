@@ -43,6 +43,20 @@ def _load_audio(path: str):
 def precise_srt(wav: str, script_dict: dict) -> tuple[str, str]:
     """返回 (srt文本, 模式)。任何失败自动降级 approximate。"""
     total = _wav_duration(wav)
+    bounds, mode = _align(wav, script_dict, total)
+    if bounds is None:
+        return approximate_srt(script_dict, total), "approx"
+    return _srt_from_bounds(script_dict, bounds), mode
+
+
+def align_bounds(wav: str, script_dict: dict) -> list[float] | None:
+    """词级对齐出轮次边界（len = 轮数+1）；供利落化变速使用。失败返回 None。"""
+    bounds, _mode = _align(wav, script_dict, _wav_duration(wav))
+    return bounds
+
+
+def _align(wav: str, script_dict: dict,
+           total: float) -> tuple[list[float] | None, str]:
     try:
         model = _get_model(os.getenv("ASR_MODEL", "tiny"))
         audio = _load_audio(wav)
@@ -53,11 +67,10 @@ def precise_srt(wav: str, script_dict: dict) -> tuple[str, str]:
             for w in (seg.words or []):
                 words.append((float(w.start), float(w.end)))
         if len(words) < max(3, len(script_dict["text"]) // 2):
-            return approximate_srt(script_dict, total), "approx"   # 识别结果过少不可信
-        bounds = _snap_boundaries(script_dict, total, words)
-        return _srt_from_bounds(script_dict, bounds), "precise"
+            return None, "approx"                        # 识别结果过少不可信
+        return _snap_boundaries(script_dict, total, words), "precise"
     except Exception:
-        return approximate_srt(script_dict, total), "approx"
+        return None, "approx"
 
 
 def _snap_boundaries(script_dict: dict, total: float,

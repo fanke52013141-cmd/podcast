@@ -6,8 +6,9 @@
 from __future__ import annotations
 from pathlib import Path
 
-from postprocess import mix
-from postprocess.subtitles import approximate_srt, precise_srt
+from postprocess import mix, crisp
+from postprocess.subtitles import (approximate_srt, align_bounds,
+                                   _srt_from_bounds, _wav_duration)
 
 
 def pick_bgm(style: str, bgm_dir: str | Path | None = None,
@@ -38,11 +39,26 @@ def run(script_dict: dict, wav_path: str, out_dir: str | Path,
     final_mp3 = str(out / "final.mp3")
     srt_path = str(out / "subtitles.srt")
 
-    bgm = pick_bgm(style, explicit=bgm_override) if with_bgm else None
-    mix.run_mix(wav_path, bgm, final_mp3)             # loudnorm -16LUFS 恒定生效
+    # 利落化（crisp）：压长停顿 + 按音色 speed_feel 逐轮不变调变速，
+    # 解决 SoulX 模仿绵软参考音导致的"尾音黏糊、节奏拖沓"
+    voice_wav = str(out / "voice_crisp.wav")
+    srt_mode = "approx"
+    try:
+        bounds = align_bounds(wav_path, script_dict)
+        res = crisp.run(wav_path, voice_wav, script_dict, bounds)
+        voice_wav = res["wav"]
+        if res["bounds_shifted"]:
+            srt_text = _srt_from_bounds(script_dict, res["bounds_shifted"])
+            srt_mode = "precise"
+        else:
+            srt_text = approximate_srt(script_dict, _wav_duration(voice_wav))
+    except Exception:
+        voice_wav = wav_path                          # 利落化失败不阻塞主链
+        srt_text = approximate_srt(script_dict, _wav_duration(voice_wav))
 
-    # P2-2：优先 faster-whisper 词级对齐，失败自动降级近似
-    srt_text, srt_mode = precise_srt(wav_path, script_dict)
+    bgm = pick_bgm(style, explicit=bgm_override) if with_bgm else None
+    mix.run_mix(voice_wav, bgm, final_mp3)            # loudnorm -16LUFS 恒定生效
+
     Path(srt_path).write_text(srt_text, encoding="utf-8")
     vtt_path = str(out / "subtitles.vtt")
     import re as _re

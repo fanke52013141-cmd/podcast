@@ -131,6 +131,7 @@ def build_script(job_id: str, style: str, minutes: int,
     for sid, vid in voice_map.items():
         v = voices[vid]
         speakers.append(Speaker(id=sid, voice_id=vid, prompt_audio=v.prompt_audio,
-                                prompt_text=v.prompt_text))
+                                prompt_text=v.prompt_text,
+                                speed_feel=getattr(v, "speed_feel", "normal") or "normal"))
     return SoulXScript(job_id=job_id, style=style, target_minutes=minutes,
                        speakers=speakers, text=turns)
