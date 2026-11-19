@@ -4,29 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>任务详情 · AI 播客</title>
-<link rel="stylesheet" href="/static/style.css?v=0.17">
-<link rel="stylesheet" href="/static/duo.css?v=0.17">
-<link rel="stylesheet" href="/static/final.css?v=0.17">
-<link rel="stylesheet" href="/static/dropdown.css?v=0.17">
-<script src="/static/dropdown.js?v=0.17" defer></script>
-<link rel="stylesheet" href="/static/warm.css?v=0.17">
-<script src="/static/creator.js?v=0.17" defer></script>
+<link rel="stylesheet" href="/static/style.css?v=0.18">
+<link rel="stylesheet" href="/static/duo.css?v=0.18">
+<link rel="stylesheet" href="/static/final.css?v=0.18">
+<link rel="stylesheet" href="/static/dropdown.css?v=0.18">
+<script src="/static/dropdown.js?v=0.18" defer></script>
+<link rel="stylesheet" href="/static/warm.css?v=0.18">
+<script src="/static/creator.js?v=0.18" defer></script>
 </head>
 <body>
 <header class="topbar">
   <div class="logo">AI 播客</div>
   <nav>
     <a href="/">工作台</a>
-    <a href="/voices?v=0.17">音色库</a>
-    <a class="active" href="/tasks?v=0.17">任务中心</a>
-    <a href="/settings?v=0.17">设置</a>
-    <a href="/logs?v=0.17">日志</a>
+    <a href="/voices?v=0.18">音色库</a>
+    <a class="active" href="/tasks?v=0.18">任务中心</a>
+    <a href="/settings?v=0.18">设置</a>
+    <a href="/logs?v=0.18">日志</a>
   </nav>
 </header>
 
 <main class="jobwrap">
   <div class="crumb">
-    <a href="/tasks?v=0.17">任务中心</a> <span class="sep">/</span> <b id="jTopic">加载中…</b>
+    <a href="/tasks?v=0.18">任务中心</a> <span class="sep">/</span> <b id="jTopic">加载中…</b>
     <span class="badge" id="jState">…</span>
     <span class="badge done" id="finalBadge" hidden>成品 MP3</span>
     <div class="crumb-actions">
@@ -51,22 +51,40 @@
 
   <!-- 播放器 + 后期开关 -->
   <section class="card playercard stack">
-    <div class="player">
-      <div class="sec-head"><h2>播客预览</h2><span class="mono small" id="durationTxt"></span></div>
-      <canvas id="wave" class="empty" height="88"></canvas>
-      <div class="pctrl">
-        <button class="playbtn" id="playBtn">▶</button>
-        <span class="mono" id="timeTxt">00:00 / 00:00</span>
-        <div class="speedseg mono" id="speed">
-          <button data-v="0.75">0.75x</button><button data-v="1" class="on">1.0x</button><button data-v="1.5">1.5x</button>
+    <div class="player np-player" id="podPlayer">
+      <div class="np-head">
+        <div class="np-art">
+          <img id="npCover" alt="节目封面" hidden>
+          <span class="np-art-fallback" id="npCoverFallback" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>
+            <small>AI</small>
+          </span>
         </div>
-        <div class="volwrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
-          <input type="range" id="vol" min="0" max="100" value="90">
+        <div class="np-copy">
+          <div class="np-eyebrow"><span>播客预览</span><span class="np-state is-idle" id="playerState">待合成</span></div>
+          <h2 class="np-title" id="npTitle">加载中…</h2>
+          <div class="np-meta"><span id="npMeta">AI 播客</span><span class="np-sep" id="npSep">·</span><span class="np-format mono" id="durationTxt">—</span></div>
+        </div>
+      </div>
+      <div class="np-wavewrap">
+        <canvas id="wave" class="empty" height="88"></canvas>
+        <div class="np-empty" id="noWav">生成音频后即可试听</div>
+      </div>
+      <div class="np-controls">
+        <button class="np-play" id="playBtn" type="button" aria-label="播放">
+          <svg class="np-i-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.7v12.6L19 12 8 5.7Z"/></svg>
+          <svg class="np-i-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="5" width="3.5" height="14" rx="1.1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1.1"/></svg>
+        </button>
+        <span class="np-time mono" id="timeTxt">00:00 / 00:00</span>
+        <div class="np-speed mono" id="speed">
+          <button type="button" data-v="0.75">0.75x</button><button type="button" data-v="1" class="on">1.0x</button><button type="button" data-v="1.5">1.5x</button>
+        </div>
+        <div class="np-vol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+          <input type="range" id="vol" min="0" max="100" value="90" aria-label="音量">
         </div>
       </div>
       <audio id="audio" preload="none"></audio>
-      <div class="nowav small" id="noWav">等待语音合成</div>
     </div>
     <div class="switchcard">
       <div class="sec-head"><h2>后期</h2></div>
@@ -98,7 +116,7 @@
       <span class="small mono" id="gainList"></span>
     </div>
     <div class="small" id="gainEmpty" hidden style="margin-top:10px;color:var(--txt2)">脚本生成后可调整单轮音量</div>
-    <div class="small" style="margin-top:6px">运行日志：<a href="/traces?v=0.17" style="color:var(--amber)">/traces</a></div>
+    <div class="small" style="margin-top:6px">运行日志：<a href="/traces?v=0.18" style="color:var(--amber)">/traces</a></div>
   </section>
 
   <!-- 音效/转场（P2-6） -->
@@ -130,6 +148,6 @@
   </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="/static/job.js?v=0.17"></script>
+<script src="/static/job.js?v=0.18"></script>
 </body>
 </html>

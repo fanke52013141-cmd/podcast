@@ -199,6 +199,10 @@ function fmt(sec) { sec = Math.round(sec); return String(Math.floor(sec / 60)).p
 
 // ---------- 播放器 ----------
 let waveSeed = null;
+let waveRatio = 0;
+let playerBound = false;
+let coverBound = false;
+
 function renderPlayer() {
   const wav = job.paths?.wav, fin = job.paths?.final_mp3, srt = job.paths?.srt;
   $("btnExport").disabled = !(fin || wav);
@@ -224,50 +228,138 @@ function renderPlayer() {
   };
   $("finalBadge").hidden = !fin;
   $("btnPP").hidden = !wav;
-  if (wav) {
-    const au = $("audio"); au.src = `/api/jobs/${JID}/audio`;
-    au.addEventListener("timeupdate", () => {
-      const r = au.duration ? au.currentTime / au.duration : 0;
-      drawWave(r); $("timeTxt").textContent = fmt(au.currentTime) + " / " + fmt(au.duration);
+
+  $("npTitle").textContent = job.topic || "未命名节目";
+  $("npMeta").textContent = `${job.style || "AI 播客"} · ${job.minutes || "—"} 分钟`;
+  const dur = $("durationTxt");
+  dur.textContent = fin ? "MP3 成品" : (wav ? "48kHz WAV" : "");
+  dur.hidden = !wav;
+  $("npSep").hidden = !wav;
+  const state = $("playerState");
+  state.textContent = fin ? "成品 MP3" : (wav ? "可试听" : "待合成");
+  state.classList.toggle("is-ready", !!wav);
+  state.classList.toggle("is-idle", !wav);
+  $("podPlayer").classList.toggle("is-idle", !wav);
+  $("noWav").hidden = !!wav;
+  $("noWav").textContent = job.status === "script_ready" ? "生成音频后即可试听" : "等待语音合成";
+
+  const cover = $("npCover"), fallback = $("npCoverFallback");
+  if (!coverBound) {
+    cover.addEventListener("error", () => { cover.hidden = true; fallback.hidden = false; });
+    coverBound = true;
+  }
+  if (job.paths?.cover) {
+    cover.src = `/api/jobs/${JID}/cover`;
+    cover.alt = (job.topic || "节目") + " 封面";
+    cover.hidden = false; fallback.hidden = true;
+  } else {
+    cover.hidden = true; fallback.hidden = false;
+  }
+
+  const au = $("audio");
+  const playBtn = $("playBtn");
+  const speedButtons = document.querySelectorAll("#speed [data-v]");
+  const available = !!wav;
+  playBtn.disabled = !available;
+  $("vol").disabled = !available;
+  speedButtons.forEach(b => b.disabled = !available);
+
+  if (!playerBound) {
+    playerBound = true;
+    const setPlaying = on => {
+      playBtn.classList.toggle("is-playing", on);
+      playBtn.setAttribute("aria-label", on ? "暂停" : "播放");
+    };
+    au.addEventListener("loadedmetadata", () => {
+      $("timeTxt").textContent = "00:00 / " + fmt(au.duration);
     });
-    au.addEventListener("play", () => $("playBtn").textContent = "⏸");
-    au.addEventListener("pause", () => $("playBtn").textContent = "▶");
-    $("playBtn").addEventListener("click", () => au.paused ? au.play() : au.pause());
-    document.querySelectorAll("#speed [data-v]").forEach(b =>
+    au.addEventListener("timeupdate", () => {
+      const ratio = au.duration ? au.currentTime / au.duration : 0;
+      drawWave(ratio);
+      $("timeTxt").textContent = fmt(au.currentTime) + " / " + fmt(au.duration);
+    });
+    au.addEventListener("play", () => setPlaying(true));
+    au.addEventListener("pause", () => setPlaying(false));
+    au.addEventListener("ended", () => setPlaying(false));
+    playBtn.addEventListener("click", () => {
+      if (playBtn.disabled) return;
+      if (au.paused) au.play().catch(() => toast("浏览器暂未允许自动播放，请再点一次"));
+      else au.pause();
+    });
+    speedButtons.forEach(b =>
       b.addEventListener("click", () => {
         au.playbackRate = parseFloat(b.dataset.v);
-        document.querySelectorAll("#speed [data-v]").forEach(x => x.classList.toggle("on", x === b));
+        speedButtons.forEach(x => x.classList.toggle("on", x === b));
       }));
     $("vol").addEventListener("input", e => au.volume = e.target.value / 100);
-    $("noWav").hidden = true;
-    $("durationTxt").textContent = "48kHz WAV";
-  } else {
-    $("durationTxt").textContent = "—";
+    $("wave").addEventListener("click", e => {
+      if (!job.paths?.wav) return;
+      const auEl = $("audio");
+      if (!auEl.duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      auEl.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * auEl.duration;
+    });
+    window.addEventListener("resize", () => drawWave(waveRatio));
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(() => drawWave(waveRatio)).observe($("wave"));
+    }
   }
-  drawWave(0);
-  $("wave").addEventListener("click", e => {
-    if (!job.paths?.wav) return;
-    const au = $("audio"); if (!au.duration) return;
-    const rect = e.target.getBoundingClientRect();
-    au.currentTime = (e.clientX - rect.left) / rect.width * au.duration;
-  });
-  window.addEventListener("resize", () => drawWave(0));
+
+  if (wav) {
+    const src = `/api/jobs/${JID}/audio`;
+    if (au.getAttribute("src") !== src) au.src = src;
+  }
+  if (!available) $("timeTxt").textContent = "00:00 / 00:00";
+  requestAnimationFrame(() => drawWave(waveRatio));
 }
+
 function drawWave(ratio) {
-  const c = $("wave"); c.width = c.clientWidth * 2;      // 2x 清晰度
-  const ctx = c.getContext("2d"), W = c.width, H = c.height, mid = H / 2;
-  if (waveSeed === null) waveSeed = [...JID].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) | 0;
-  let s = waveSeed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
-  ctx.clearRect(0, 0, W, H);
-  const bw = 3, gap = 4;
-  for (let x = 0; x + bw <= W; x += bw + gap) {
-    const h = Math.max(8, (0.25 + rnd() * 0.75) * H * 0.9);
-    ctx.fillStyle = (x / W) <= ratio ? "#30343A" : "#D4D4D4";
-    ctx.fillRect(x, mid - h / 2, bw, h);
+  ratio = Math.max(0, Math.min(1, ratio || 0));
+  waveRatio = ratio;
+  const c = $("wave");
+  if (!c) return;
+  const width = Math.max(1, c.clientWidth);
+  const height = c.clientHeight || 82;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (c.width !== Math.round(width * dpr) || c.height !== Math.round(height * dpr)) {
+    c.width = Math.round(width * dpr);
+    c.height = Math.round(height * dpr);
   }
-  if (ratio > 0) {                                   // 珊瑚橙播放头
-    ctx.fillStyle = "#F67748";
-    ctx.fillRect(Math.round(ratio * W) - 1, 0, 2, H);
+  const ctx = c.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  if (waveSeed === null) {
+    let hash = 0;
+    for (const ch of JID) hash = (hash * 33 + ch.charCodeAt(0)) >>> 0;
+    waveSeed = (hash % 2147483646) + 1;
+  }
+  let s = waveSeed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const mid = height / 2;
+  if (ratio > 0) {
+    ctx.fillStyle = "rgba(249,115,22,.045)";
+    ctx.fillRect(0, 0, width * ratio, height);
+  }
+  const bw = 3.2, gap = 4.8, step = bw + gap;
+  const idle = ctx.createLinearGradient(0, 0, 0, height);
+  idle.addColorStop(0, "#e9cbb2"); idle.addColorStop(.5, "#d29d75"); idle.addColorStop(1, "#e9cbb2");
+  const played = ctx.createLinearGradient(0, 0, 0, height);
+  played.addColorStop(0, "#fbbf7a"); played.addColorStop(.5, "#f97316"); played.addColorStop(1, "#ea580c");
+  for (let x = 1; x + bw <= width; x += step) {
+    const h = Math.max(7, (0.22 + rnd() * 0.78) * height * 0.86);
+    const on = ratio > 0 && (x / width) <= ratio;
+    ctx.fillStyle = on ? played : idle;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, mid - h / 2, bw, h, bw / 2);
+    else ctx.rect(x, mid - h / 2, bw, h);
+    ctx.fill();
+  }
+  if (ratio > 0) {
+    const x = Math.round(width * ratio) - 1;
+    ctx.fillStyle = "#ea580c";
+    ctx.fillRect(x, 1, 2, height - 2);
+    ctx.beginPath();
+    ctx.arc(x + 1, height - 7, 2.6, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 

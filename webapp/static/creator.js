@@ -28,7 +28,7 @@
         <span class="creator-avatar" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg>
         </span>
-        <span class="creator-trigger-text"><small>本机创作账号</small><b id="creatorName">我的账号</b></span>
+        <span class="creator-trigger-text"><b id="creatorName">我的账号</b></span>
         <svg class="creator-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7 10 5 5 5-5"/></svg>
       </button>
       <div class="creator-menu" hidden>

@@ -56,16 +56,8 @@ function taskStage(j) {
 
 function stepRail(j) {
   const info = taskStage(j);
-  const dots = STEP_LABELS.map((label, index) => {
-    const n = index + 1;
-    let cls = "";
-    if (info.failed && n === info.stage) cls = "failed";
-    else if (info.complete || n < info.stage) cls = "done";
-    else if (n === info.stage) cls = "current";
-    return `<span class="sdot ${cls}" title="${n}/5 ${label}">${n}</span>`;
-  }).join("");
   const current = info.complete ? "5/5 完成" : `${info.stage}/5 ${STEP_LABELS[info.stage - 1]}`;
-  return `<div class="steprail">${dots}<span class="stepnow${info.failed ? " failed" : ""}">${current}</span></div>`;
+  return `<div class="steprail"><span class="stepnow${info.failed ? " failed" : ""}">${current}</span></div>`;
 }
 
 function render() {
